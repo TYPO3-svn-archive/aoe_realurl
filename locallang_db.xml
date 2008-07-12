@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>database</type>
+		<description>
+			Language labels for database tables/fields belonging to
+			extension 'aoe_realurlpath'
+		</description>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="pages.tx_aoerealurlpath_overridepath">
+				override url path
+			</label>
+			<label index="pages.tx_aoerealurlpath_excludefrommiddle">
+				exclude from middle of paths
+			</label>
+			<label index="pages.tx_aoerealurlpath_overridesegment">
+				override pathsegment (filename)
+			</label>
+			<label index="moduleFunction.tx_aoerealurlpath_modfunc1">
+				Realurl Path Infos
+			</label>
+		</languageKey>
+	</data>
+</T3locallang>

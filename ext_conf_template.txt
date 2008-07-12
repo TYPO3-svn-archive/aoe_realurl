@@ -1,0 +1,6 @@
+
+  # cat=basic//10; type=boolean; label= add the fields overridepath and exclude also to page language overlay
+addpageOverlayFields = 1
+
+  # cat=basic//10; type=boolean; label= Add PATCH for real_url (enables direct links to external urls)
+applyPatch = 1
