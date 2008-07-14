@@ -47,7 +47,7 @@ class tx_aoerealurlpath_cachemgmt
     var $languageId;
     //unique path check
     var $rootPid;
-    var $doCacheClear = FALSE;
+   
     var $cacheTimeOut = 0; //timeout in seconds for cache entries
     var $useUnstrictCacheWhere = FALSE;
     function tx_aoerealurlpath_cachemgmt ($workspace, $languageid)
@@ -56,6 +56,8 @@ class tx_aoerealurlpath_cachemgmt
         $this->languageId = $languageid;
         $this->cacheTimeOut = 0;
         $this->useUnstrictCacheWhere = FALSE;
+        $confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['aoe_realurlpath']);
+        $this->setCacheTimeOut($confArr['defaultCacheTimeOut']);
     }
     function setRootPid ($rootpid)
     {
@@ -77,10 +79,7 @@ class tx_aoerealurlpath_cachemgmt
     {
         $this->useUnstrictCacheWhere = FALSE;
     }
-    function doCacheClearOnCheck ()
-    {
-        $this->doCacheClearOnCheck = TRUE;
-    }
+    
     function getWorkspaceId ()
     {
         return $this->workspaceId;
@@ -102,10 +101,31 @@ class tx_aoerealurlpath_cachemgmt
      **/
     function checkCacheWithDecreasingPath ($pagePathOrigin, &$keepPath)
     {
-        $sizeOfPath = count($pagePathOrigin);
+       return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, &$keepPath,FALSE);
+    }
+	
+	/**
+     * important function: checks the path in the cache: if not found the check against cache is repeted without the last pathpart
+     * @param array  $pagePathOrigin  the path which should be searched in cache
+     * @param &$keepPath  -> passed by reference -> array with the n last pathparts which could not retrieved from cache -> they are propably preVars from translated parameters (like tt_news is etc...)
+     *
+     * @return pagid or false
+     **/
+    function checkHistoryCacheWithDecreasingPath ($pagePathOrigin, &$keepPath)
+    {
+        return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, &$keepPath,TRUE);
+    }
+    
+    function _checkACacheTableWithDecreasingPath($pagePathOrigin, &$keepPath,$inHistoryTable=FALSE) {
+    	$sizeOfPath = count($pagePathOrigin);
         $pageId = false;
         for ($i = $sizeOfPath; $i > 0; $i --) {
-            $pageId = $this->_readCacheForPath(implode("/", $pagePathOrigin));
+        	if (!$inHistoryTable) {
+            	$pageId = $this->_readCacheForPath(implode("/", $pagePathOrigin));
+        	}
+        	else {
+        		$pageId = $this->_readHistoryCacheForPath(implode("/", $pagePathOrigin));
+        	}
             if ($pageId !== false) {
                 //found something => break;
                 break;
@@ -127,7 +147,9 @@ class tx_aoerealurlpath_cachemgmt
     {
         #echo '<hr> request to store:'.$pid.' '.$buildedPath;
         if ($this->isInCache($pid) === false) {
-            if ($this->_readCacheForPath($buildedPath)) {
+        	$this->_checkForCleanupCache($pid,$buildedPath);
+        	//do cleanup of old cache entries:
+        	if ($this->_readCacheForPath($buildedPath)) {
                 //$buildedPath.='_'.rand();
                 $buildedPath .= '_' . $pid;
             }
@@ -164,34 +186,114 @@ class tx_aoerealurlpath_cachemgmt
             return false;
         }
     }
+ 	/**
+     * checks cache and looks if a path exist (in workspace, rootpid, language)
+     * @param string Path
+     * @return string unique path in cache
+     **/
+    function _readHistoryCacheForPath ($pagePath)
+    {
+        $where = "path=\"" . $pagePath . '"' . $this->_getAddCacheWhere(TRUE);
+        $res = $GLOBALS['TYPO3_DB']->exec_SELECTquery("*", "tx_aoerealurlpath_cachehistory", $where);
+        #$query = $GLOBALS['TYPO3_DB']->SELECTquery("*","tx_aoerealurlpath_cache",$where);
+        #debug($query);
+        if ($res)
+            $result = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
+        if ($result['pageid']) {
+            return $result['pageid'];
+        } else {
+            return false;
+        }
+    }
     /* check if a pid has allready a builded path in cache (for workspace,language, rootpid)
 	return false or pagepath
 	*/
     function isInCache ($pid)
     {
-        $where = "pageid=" . intval($pid) . $this->_getAddCacheWhere();
-        $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("*", "tx_aoerealurlpath_cache", $where);
-        if ($query)
-            $result = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
-        if (! is_array($result)) {
+        $row=$this->getCacheRowForPid($pid);
+        if (! is_array($row)) {
             return false;
         } else {
-            if ($this->doCacheClearOnCheck && ($result['tstamp'] + $this->cacheTimeOut) < time()) {
-                $this->delCacheForPid($pid);
-                return false;
-            } else {
-                return $result['path'];
-            }
+        	if ($this->_isCacheRowStillValid($row)) {
+        		return $row['path'];
+        	}
+        	else {
+        		return false;
+        	}
+        	
         }
     }
-    function delCacheForPid ($pid)
+    function getCacheRowForPid($pid) {
+    	$row=false;
+    	$where = "pageid=" . intval($pid) . $this->_getAddCacheWhere();
+        $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("*", "tx_aoerealurlpath_cache", $where);
+        if ($query)
+            $row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
+        return $row;
+    }
+	function getCacheHistoryRowsForPid($pid) {
+    	$rows=array();
+    	$where = "pageid=" . intval($pid) . $this->_getAddCacheWhere();
+        $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("*", "tx_aoerealurlpath_cachehistory", $where);
+        while ($row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query)) {
+        	$rows[]=$row;
+        }
+        return $rows;
+    }
+    function _checkForCleanupCache($pid,$newPath) {
+    	$row=$this->getCacheRowForPid($pid);
+        if (!is_array($row)) {
+            return false;
+        } 
+        elseif (!$this->_isCacheRowStillValid($row)) {
+        	if ($newPath != $row['path'])
+        		$this->insertInCacheHistory($row);
+        	$this->_delCacheForPid($row['pageid']);
+        }
+        	
+    }
+    function _isCacheRowStillValid($row) {
+    	if ($row['dirty'] ==1) {
+    		return false;
+        }
+        elseif (($row['tstamp'] + $this->cacheTimeOut) < time()) {
+            return false;
+        } 
+        else {
+        	return true;
+        }
+    }
+    
+    function _delCacheForPid ($pid)
     {
         $where = "pageid=" . intval($pid) . $this->_getAddCacheWhere();
         $GLOBALS['TYPO3_DB']->exec_DELETEquery("tx_aoerealurlpath_cache", $where);
     }
+	function delCacheForCompletePid ($pid)
+    {
+        $where = "pageid=" . intval($pid) . ' AND workspace=' . intval($this->getWorkspaceId());
+        $GLOBALS['TYPO3_DB']->exec_DELETEquery("tx_aoerealurlpath_cache", $where);
+    }
+	function markAsDirtyCompletePid ($pid)
+    {
+        $where = "pageid=" . intval($pid) . ' AND workspace=' . intval($this->getWorkspaceId());
+        $GLOBALS['TYPO3_DB']->exec_UPDATEquery("tx_aoerealurlpath_cache", $where,array('dirty'=>1));
+    }
+	function insertInCacheHistory ($row)
+    {
+        unset($row['dirty']);
+    	$row['tstamp']=time();
+    	$GLOBALS['TYPO3_DB']->exec_INSERTquery("tx_aoerealurlpath_cachehistory", $row);
+    }
     function clearAllCache ()
     {
         $GLOBALS['TYPO3_DB']->exec_DELETEquery("tx_aoerealurlpath_cache", '1=1');
+        $GLOBALS['TYPO3_DB']->exec_DELETEquery("tx_aoerealurlpath_cachehistory", '1=1');
+    }
+	function clearAllCacheHistory ()
+    {
+       
+        $GLOBALS['TYPO3_DB']->exec_DELETEquery("tx_aoerealurlpath_cachehistory", '1=1');
     }
     /**
      * get where for cache table selects based on internal vars

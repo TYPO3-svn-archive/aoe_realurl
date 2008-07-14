@@ -26,7 +26,7 @@ require_once (PATH_t3lib . 'class.t3lib_extobjbase.php');
 /**
  * Module extension (addition to function menu) 'Language Visibility Overview' for the 'testtt' extension.
  *
- * @author     <Daniel Pötzinger>
+ * @author     <Daniel Pï¿½tzinger>
  * @package    TYPO3
  * @subpackage    tx_languagevisibility
  */
@@ -62,12 +62,18 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
             // Add CSH:
             $theOutput .= t3lib_BEfunc::cshItem('_MOD_web_aoerealurlpath', 'lang', $GLOBALS['BACK_PATH'], '|<br/>');
             //Add action buttons:
-            $theOutput .= '<input name="id" value="' . $this->pObj->id . '" type="hidden"><input type="submit" value="clear all" name="_action_clearall">';
-            $theOutput .= '<input type="submit" value="clear visible tree" name="_action_clearvisible">';
+            $theOutput .= '<br /><input name="id" value="' . $this->pObj->id . '" type="hidden"><input type="submit" value="clear all (complete cache and history)" name="_action_clearall">';
+            $theOutput .= '<br /><input type="submit" value="clear visible tree" name="_action_clearvisible">';
+            $theOutput .= '<br /><input type="submit" value="mark visible tree as dirty" name="_action_dirtyvisible">';
+            $theOutput.='<br /><input type="submit" value="clear complete history cache" name="_action_clearallhistory">';
+            $theOutput.='<br /><input type="submit" value="regenerate (FE-calls)" name="_action_regenerate">';
             //$theOutput.='<input type="submit" value="regenerate!" name="_action_clearall">';
             //check actions:
             if (t3lib_div::_GP('_action_clearall') != '') {
                 $this->cachemgmt->clearAllCache();
+            }
+        	if (t3lib_div::_GP('_action_clearallhistory') != '') {
+                $this->cachemgmt->clearAllCacheHistory();
             }
             // Showing the tree:
             // Initialize starting point of page tree:
@@ -97,6 +103,7 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
 				}
 				
 				TD.c-ok { background-color: #A8E95C; }
+				TD.c-ok-expired { background-color: #B8C95C; }
 				TD.c-shortcut { background-color: #B8E95C; font-weight: 200}
 				TD.c-nok { background-color: #E9CD5C; }
 				TD.c-leftLine {border-left: 2px solid black; }
@@ -104,7 +111,7 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
 			';
             $marker = '/*###POSTCSSMARKER###*/';
             $this->pObj->content = str_replace($marker, $css_content . chr(10) . $marker, $this->pObj->content);
-            $theOutput .= 'AOE realurl path cache for workspace -' . $GLOBALS['BE_USER']->workspace;
+            $theOutput .= '<hr />AOE realurl path cache for workspace -' . $GLOBALS['BE_USER']->workspace;
             // Render information table:
             $theOutput .= $this->renderTable($tree);
         }
@@ -133,26 +140,50 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
             $editUid = $data['row']['uid'];
             //check actions:
             if (t3lib_div::_GP('_action_clearvisible') != '') {
-                $this->cachemgmt->delCacheForPid($editUid);
+                $this->cachemgmt->delCacheForCompletePid($editUid);
             }
+        	if (t3lib_div::_GP('_action_dirtyvisible') != '') {
+                $this->cachemgmt->markAsDirtyCompletePid($editUid);
+            }
+            
             //first cell (tree):
             // Page icons / titles etc.
             $tCells[] = '<td' . ($data['row']['_CSSCLASS'] ? ' class="' . $data['row']['_CSSCLASS'] . '"' : '') . '>' . $data['HTML'] . htmlspecialchars(t3lib_div::fixed_lgd_cs($data['row']['title'], $titleLen)) . (strcmp($data['row']['nav_title'], '') ? ' [Nav: <em>' . htmlspecialchars(t3lib_div::fixed_lgd_cs($data['row']['nav_title'], $titleLen)) . '</em>]' : '') . '</td>';
             //language cells:
             foreach ($languageList as $language) {
+            	$langId = $language['uid'];
+	            if (t3lib_div::_GP('_action_regenerate') != '') {
+	               $url=t3lib_div::getIndpEnv('TYPO3_SITE_URL').'index.php?id='.$editUid.'&no_cache=1&L='.$langId;
+	               fopen($url,'r');
+	            }
                 $info = '';
                 $params = '&edit[pages][' . $editUid . ']=edit';
-                $langId = $language['uid'];
+                
                 $this->cachemgmt->setLanguageId($langId);
-                $path = $this->cachemgmt->isInCache($editUid);
-                if ($path !== false) {
+                $cacheRow=$this->cachemgmt->getCacheRowForPid($editUid);
+                $cacheHistoryRows=$this->cachemgmt->getCacheHistoryRowsForPid($editUid);
+            	$isValidCache=$this->cachemgmt->_isCacheRowStillValid($cacheRow);
+            	$hasEntry=FALSE;
+            	$path='';
+            	if (is_array($cacheRow)) {
+            		$hasEntry=TRUE;
+                	$path = $cacheRow['path'].' <small style="color: #555"><i>'.($cacheRow['dirty']?'X':'').'('.$cacheRow['rootpid'].')</i></small>';
+            	}
+            	if (count($cacheHistoryRows)>0) {
+            		$path.='[History:'.count($cacheHistoryRows).']';
+            	}
+                if ($isValidCache) {
                     $status = 'c-ok';
                 } elseif ($data['row']['doktype'] == 4) {
                     $path = '--- [shortcut]';
                     $status = 'c-shortcut';
+                } elseif ($hasEntry) {
+                	$status = 'c-ok-expired';
                 } else {
                     $status = 'c-nok';
                 }
+                $viewPageLink = '<a href="#" onclick="' . htmlspecialchars(t3lib_BEfunc::viewOnClick($data['row']['uid'], $GLOBALS['BACK_PATH'], '', '', '', '&L=###LANG_UID###')) . '">' . '<img' . t3lib_iconWorks::skinImg($GLOBALS['BACK_PATH'], 'gfx/zoom.gif', 'width="12" height="12"') . ' title="' . $LANG->getLL('lang_viewPage', '1') . '" border="0" alt="" />' . '</a>';
+                $viewPageLink=str_replace('###LANG_UID###',$langId,$viewPageLink);    
                 if ($langId == 0) {
                     //Default
                     //"View page" link is created:
@@ -167,8 +198,9 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
                     // Put into cell:
                     $tCells[] = '<td class="' . $status . ' c-leftLine">' . $info . '</td>';
                 } else {
+                	
                     //Normal Languages:
-                    $tCells[] = '<td class="' . $status . ' c-leftLine">' . $path . '</td>';
+                    $tCells[] = '<td class="' . $status . ' c-leftLine">' .$viewPageLink. $path . '</td>';
                 }
             }
             $output .= '
@@ -210,6 +242,7 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
         }
         return $outputArray;
     }
+    
 }
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/languagevisibility/modfunc1/class.tx_languagevisibility_modfunc1.php']) {
     include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/languagevisibility/modfunc1/class.tx_languagevisibility_modfunc1.php']);

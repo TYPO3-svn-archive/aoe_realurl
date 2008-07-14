@@ -4,3 +4,6 @@ addpageOverlayFields = 1
 
   # cat=basic//10; type=boolean; label= Add PATCH for real_url (enables direct links to external urls)
 applyPatch = 1
+
+  # cat=basic//10; type=text; label= Default expire time for generated paths (revalidates after x sec)
+defaultCacheTimeOut = 1000

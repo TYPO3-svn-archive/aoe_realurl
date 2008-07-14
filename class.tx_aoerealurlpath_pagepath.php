@@ -68,7 +68,7 @@ class tx_aoerealurlpath_pagepath
         $this->cachemgmt = new $cachemgmtClassName($this->_getWorkspaceId(), $this->_getLanguageVar());
         $this->cachemgmt->setCacheTimeout($this->conf['cacheTimeOut']);
         $this->cachemgmt->setRootPid($this->_getRootPid());
-        $this->cachemgmt->doCacheClearOnCheck(); //activate automatic clear if expire		
+        	
         switch ((string) $params['mode']) {
             case 'encode':
                 $path = $this->_id2alias($params['paramKeyValues']);
@@ -106,8 +106,6 @@ class tx_aoerealurlpath_pagepath
         }
         if ($buildedPath) {
             $pagePath_exploded = explode('/', $buildedPath);
-            //$pagePath_exploded=array();
-            //$pagePath_exploded[]='http://www.aoemedia.de';
             return $pagePath_exploded;
         } else {
             return array();
@@ -126,12 +124,19 @@ class tx_aoerealurlpath_pagepath
         $this->_checkAndDoRedirect($pagePathOrigin);
         //read cache with the path you get, decrease path if nothing is found
         $pageId = $this->cachemgmt->checkCacheWithDecreasingPath($pagePathOrigin, $keepPath);
+        //fallback 1 - use unstrict cache where
         if ($pageId == false) {
             $this->cachemgmt->useUnstrictCacheWhere();
             $keepPath = array();
             $pageId = $this->cachemgmt->checkCacheWithDecreasingPath($pagePathOrigin, $keepPath);
             $this->cachemgmt->doNotUseUnstrictCacheWhere();
         }
+        //fallback 2 - look in history
+     	if ($pageId == false) {
+            $keepPath = array();
+            $pageId = $this->cachemgmt->checkHistoryCacheWithDecreasingPath($pagePathOrigin, $keepPath);
+         }
+        
         $pagePath = $keepPath;
         return $pageId;
     }

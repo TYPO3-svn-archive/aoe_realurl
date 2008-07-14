@@ -27,7 +27,7 @@
  * WARNING: Never ever run a unit test like this on a live site!
  *
  *
- * @author	Daniel Pötzinger
+ * @author	Daniel Pï¿½tzinger
  */
 require_once (t3lib_extMgm::extPath("aoe_realurlpath") . 'class.tx_aoerealurlpath_cachemgmt.php');
 // require_once (t3lib_extMgm::extPath('phpunit').'class.tx_phpunit_test.php');
@@ -41,7 +41,7 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_testcase
         $cache->setRootPid(1);
         $path = $cache->storeUniqueInCache('9999', 'test9999');
         $this->assertEquals('test9999', $cache->isInCache(9999), 'should be in cache');
-        $cache->delCacheForPid(9999);
+        $cache->_delCacheForPid(9999);
         $this->assertFalse($cache->isInCache(9999), 'should not be in cache');
     }
     public function test_storeEmptyInCache ()
@@ -56,7 +56,7 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_testcase
         $path = $cache->storeUniqueInCache('9995', '');
         $this->assertEquals('', $path, 'should be empty path');
         $this->assertEquals('', $cache->isInCache(9995), 'should be in cache');
-        $cache->delCacheForPid(9995);
+        $cache->_delCacheForPid(9995);
         $this->assertFalse($cache->isInCache(9995), 'should not be in cache');
     }
     public function test_getEmptyFromCache ()
@@ -118,6 +118,41 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_testcase
         $dummy = array();
         $pidOrFalse = $cache->checkCacheWithDecreasingPath(array('sample' , 'path2'), $dummy);
         $this->assertEquals($pidOrFalse, FALSE, ' should not be fould for path');
+    }
+    public function test_canDetectRowAsInvalid()
+    {
+        $cache = new tx_aoerealurlpath_cachemgmt(0, 0);
+        $cache->setCacheTimeOut(1);
+        $this->assertFalse($cache->_isCacheRowStillValid(array('dirty'=>'1'),FALSE),'should return false');
+        $this->assertFalse($cache->_isCacheRowStillValid(array('tstamp'=>(time()-2)),FALSE),'should return false');
+    }    
+ 	public function test_canStoreAndGetFromHistory()
+    {
+        $cache = new tx_aoerealurlpath_cachemgmt(0, 0);
+        $cache->clearAllCache();
+        $cache->setCacheTimeOut(1);
+        $cache->setRootPid(1);
+        $cache->storeUniqueInCache('9990', 'sample/path1');
+       
+        $dummy = array();
+        $pidOrFalse = $cache->checkCacheWithDecreasingPath(array('sample' , 'path1'), $dummy);
+        $this->assertEquals($pidOrFalse, '9990', '9990 should be fould for path');
+        
+        sleep(2);
+        
+        $dummy = array();
+        $pidOrFalse = $cache->checkCacheWithDecreasingPath(array('sample' , 'path1'), $dummy);
+        $this->assertEquals($cache->isInCache(9990), FALSE, 'cache should be expired');
+
+        $cache->storeUniqueInCache('9990', 'sample/path1new');
+        $dummy = array();
+        $pidOrFalse = $cache->checkCacheWithDecreasingPath(array('sample' , 'path1new'), $dummy);
+        $this->assertEquals($pidOrFalse, '9990', ' 9990 should be the path');
+        //now check history
+        
+        $pidOrFalse = $cache->checkHistoryCacheWithDecreasingPath(array('sample' , 'path1'), $dummy);
+        $this->assertEquals($pidOrFalse, '9990', ' 9990 should be the pid in history');
+        
     }
 }
 ?>

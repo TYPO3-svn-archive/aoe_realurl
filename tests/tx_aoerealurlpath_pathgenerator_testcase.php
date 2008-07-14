@@ -27,60 +27,114 @@
  * WARNING: Never ever run a unit test like this on a live site!
  *
  *
- * @author	Daniel Pötzinger
+ * @author	Daniel Pï¿½tzinger
  */
 
 //TODO: add testdatabase xml
-require_once (t3lib_extMgm::extPath("aoe_realurlpath") . 'class.tx_aoerealurlpath_cachemgmt.php');
+require_once (t3lib_extMgm::extPath("aoe_realurlpath") . 'class.tx_aoerealurlpath_pathgenerator.php');
 // require_once (t3lib_extMgm::extPath('phpunit').'class.tx_phpunit_test.php');
 require_once (PATH_t3lib . 'class.t3lib_tcemain.php');
 class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testcase
 {
-    public function _test_rootline_DB ()
+    /**
+     * Enter description here...
+     *
+     * @var tx_aoerealurlpath_pathgenerator
+     */
+	private $pathgenerator;
+    
+	public function setUp() {
+		//$this->createDatabase();
+		//$db = $this->useTestDatabase();
+		//create relevant tables:
+		//$GLOBALS['TYPO3_DB']->admin_query($string);
+		//$this->importExtensions(array('aoe_redirects'));
+		//$this->importDataSet(dirname(__FILE__). 'fixtures/tx_aoerealurlpath_pathgenerator_testcase_dataset.xml');
+		
+		
+        $this->pathgenerator = new tx_aoerealurlpath_pathgenerator();
+        $this->pathgenerator->init($this->fixture_defaultconfig());
+       
+	}
+	
+	public function test_canGetCorrectRootline ()
     {
-        $pathg = $this->getPathGenerator();
-        $result = $pathg->_getRootline(25, 0, 0);
+        $result=$this->pathgenerator->_getRootline(87, 0, 0);
         $count = count($result);
         $first = $result[0];
-        $this->assertEquals($count, 3, 'rootline should be 3 long');
+        $this->assertEquals($count, 4, 'rootline should be 3 long');
         $this->assertTrue(isset($first['tx_aoerealurlpath_overridesegment']), 'tx_aoerealurlpath_overridesegment should be set');
         $this->assertTrue(isset($first['tx_aoerealurlpath_excludefrommiddle']), 'tx_aoerealurlpath_excludefrommiddle should be set');
     }
-    public function _test_build_DB ()
+    public function test_canBuildStandardPaths()
     {
-        $pathg = $this->getPathGenerator();
-        $result = $pathg->build(25, 0, 0);
-        $root = $result['rootPid'];
-        $path = $result['path'];
-        $this->assertEquals($path, 'serviceinfos/headlines', 'wrong path build');
+       	// 1) Rootpage
+        $result = $this->pathgenerator->build(1, 0, 0);
+        $this->assertEquals($result['path'], '', 'wrong path build: root should be empty');
+
+        // 2) Normal Level 2 page
+        $result = $this->pathgenerator->build(83, 0, 0);
+        $this->assertEquals($result['path'], 'excludeofmiddle', 'wrong path build: should be excludeofmiddle');
+        
+        
     }
-    public function _test_buildLanguageAndWorkspace_DB ()
+	public function test_canBuildPathsWithExcludeFromMiddle()
     {
-        $pathg = $this->getPathGenerator();
-        //languageone
-        $result = $pathg->build(25, 1, 0);
-        $root = $result['rootPid'];
-        $path = $result['path'];
-        $this->assertEquals($path, 'service/ueberscrift', 'wrong path build');
-        // ws
-        $result = $pathg->build(25, 0, 1);
-        $root = $result['rootPid'];
-        $path = $result['path'];
-        $this->assertEquals($path, 'serviceinfosws/headlines', 'wrong path build for ws');
-        //languageone ws
-        $result = $pathg->build(25, 1, 1);
-        $root = $result['rootPid'];
-        $path = $result['path'];
-        $this->assertEquals($path, 'newpath/in/ws', 'wrong path build for ws');
+       	// page root->excludefrommiddle->subpage(with pathsegment)
+        $result = $this->pathgenerator->build(85, 0, 0);
+        $this->assertEquals($result['path'], 'subpagepathsegment', 'wrong path build: should be subpage');
+        
+        // page root->excludefrommiddle->subpage(with pathsegment)
+        $result = $this->pathgenerator->build(87, 0, 0);
+        $this->assertEquals($result['path'], 'subpagepathsegment/sub-subpage', 'wrong path build: should be subpagepathsegment/sub-subpage');
+        
     }
-    public function getPathGenerator ()
+    
+	public function test_canBuildPathsWithLanguageOverlay()
     {
-        $conf = $this->fixture_config();
-        $pathg = new tx_aoerealurlpath_pathgenerator();
-        $pathg->init($conf);
-        return $pathg;
+       	// page root->excludefrommiddle->languagemix (austria)
+        $result = $this->pathgenerator->build(86, 2, 0);
+        $this->assertEquals($result['path'], 'own/url/for/austria', 'wrong path build: should be own/url/for/austria');
+        
+        // page root->excludefrommiddle->subpage(with pathsegment)
+        $result = $this->pathgenerator->build(85, 2, 0);
+        $this->assertEquals($result['path'], 'subpagepathsegment-austria', 'wrong path build: should be subpagepathsegment-austria');
+        
+        // page root->excludefrommiddle->subpage (overlay with exclude middle)->sub-subpage
+        $result = $this->pathgenerator->build(87, 2, 0);
+        $this->assertEquals($result['path'], 'sub-subpage-austria', 'wrong path build: should be subpagepathsegment-austria');
+        
+        //for french (5)
+        
+        $result = $this->pathgenerator->build(86, 5, 0);
+        $this->assertEquals($result['path'], 'languagemix-segment', 'wrong path build: should be languagemix-segment');
+        
     }
-    public function fixture_config ()
+	public function test_canBuildPathsInWorkspace()
+    {
+       	// page root->excludefrommiddle->subpagepathsegment-ws
+        $result = $this->pathgenerator->build(85, 0, 1);
+        $this->assertEquals($result['path'], 'subpagepathsegment-ws', 'wrong path build: should be subpage-ws');
+        
+        // page 
+        $result = $this->pathgenerator->build(86, 2, 1);
+        $this->assertEquals($result['path'], 'own/url/for/austria/in/ws', 'wrong path build: should be own/url/for/austria/in/ws');
+
+        //page languagemix in deutsch (only translated in ws)
+        $result = $this->pathgenerator->build(86, 1, 1);
+        $this->assertEquals($result['path'], 'languagemix-de', 'wrong path build: should be own/url/for/austria/in/ws');
+        
+        //page languagemix in deutsch (only translated in ws)
+        $result = $this->pathgenerator->build(85, 1, 1);
+        $this->assertEquals($result['path'], 'subpage-ws-de', 'wrong path build: should be own/url/for/austria/in/ws');
+        
+        
+        
+    }    
+    
+  
+    
+    public function fixture_defaultconfig ()
     {
         $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 'rootpage_id' => '1' , 'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle');
         return $conf;

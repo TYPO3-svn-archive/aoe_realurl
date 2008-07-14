@@ -30,7 +30,26 @@ CREATE TABLE tx_aoerealurlpath_cache (
 	languageid int(11) DEFAULT '0' NOT NULL,	
 	pageid int(11) DEFAULT '0' NOT NULL,
 	path varchar(255) DEFAULT '' NOT NULL,	
+	dirty tinyint(3) DEFAULT '0' NOT NULL
+	
 	PRIMARY KEY (pageid,workspace,rootpid,languageid),
-	INDEX (path)
+	KEY path (path)
+);
+
+#
+# Table structure for table 'tx_aoerealurlpath_cachehistory'
+#
+CREATE TABLE tx_aoerealurlpath_cachehistory (
+	uid int(11) NOT NULL auto_increment,	
+	tstamp int(11) DEFAULT '0' NOT NULL,	
+	mpvar tinytext NOT NULL,	
+	workspace int(11) DEFAULT '0' NOT NULL,
+	rootpid int(11) DEFAULT '0' NOT NULL,
+	languageid int(11) DEFAULT '0' NOT NULL,	
+	pageid int(11) DEFAULT '0' NOT NULL,
+	path varchar(255) DEFAULT '' NOT NULL,	
+	
+	PRIMARY KEY (uid),
+	KEY path (path)
 );
 
