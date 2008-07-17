@@ -28,7 +28,7 @@
  * XClass for creating and parsing Speaking Urls
  * 
  *
- * @author	Daniel Pötzinger
+ * @author	Daniel Pï¿½tzinger
  * @package TYPO3
  * @subpackage tx_realurl
  */
@@ -43,9 +43,11 @@ class ux_tx_realurl extends tx_realurl
     function _checkForExternalPageAndGetTarget ($id)
     {
         $where = "uid=\"" . intval($id) . "\"";
-        $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("doktype,urltype,url", "pages", $where);
-        if ($query)
+        $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("uid,pid,url,doktype,urltype", "pages", $where);
+        if ($query) {
             $result = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
+	        $GLOBALS['TSFE']->sys_page->versionOL("pages",$result);
+        }
         if ($result['doktype'] == 3) {
             $url = $result['url'];
             switch ($result['urltype']) {

@@ -156,8 +156,8 @@ class tx_aoerealurlpath_pagepath
         // Find the PID where to begin the resolve:
         if ($this->conf['rootpage_id']) { // Take PID from rootpage_id if any:
             $pid = intval($this->conf['rootpage_id']);
-        } else //if not defined in realUrlConfig get 0
-{
+        } else {
+            //if not defined in realUrlConfig get 0
             $pid = 0;
         }
         return $pid;

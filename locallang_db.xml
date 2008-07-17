@@ -19,7 +19,21 @@
 				override pathsegment (filename)
 			</label>
 			<label index="moduleFunction.tx_aoerealurlpath_modfunc1">
-				Realurl Path Infos
+				AOE Realurl Path Cache Infos
+			</label>
+		</languageKey>
+		<languageKey index="de" type="array">
+			<label index="pages.tx_aoerealurlpath_overridepath">
+				kompletten realurl Pfad überschreiben
+			</label>
+			<label index="pages.tx_aoerealurlpath_excludefrommiddle">
+				nicht in der Mitte von Pfaden anzeigen
+			</label>
+			<label index="pages.tx_aoerealurlpath_overridesegment">
+				Pfadsegment für diese Seite
+			</label>
+			<label index="moduleFunction.tx_aoerealurlpath_modfunc1">
+				AOE Realurl Pfadcache Infos
 			</label>
 		</languageKey>
 	</data>
