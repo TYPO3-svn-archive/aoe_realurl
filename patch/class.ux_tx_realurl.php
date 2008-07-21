@@ -48,7 +48,7 @@ class ux_tx_realurl extends tx_realurl
             $result = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
 	        $GLOBALS['TSFE']->sys_page->versionOL("pages",$result);
         }
-        $result=$this->getPageOverlay($result);
+        $result=$GLOBALS['TSFE']->sys_page->getPageOverlay($result);
         if (count($result)) {
 	        if ($result['doktype'] == 3) {
 	            $url = $result['url'];
