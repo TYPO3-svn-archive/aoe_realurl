@@ -48,28 +48,37 @@ class ux_tx_realurl extends tx_realurl
             $result = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
 	        $GLOBALS['TSFE']->sys_page->versionOL("pages",$result);
         }
-        if ($result['doktype'] == 3) {
-            $url = $result['url'];
-            switch ($result['urltype']) {
-                case '1':
-                    return 'http://' . $url;
-                    break;
-                case '4':
-                    return 'https://' . $url;
-                    break;
-                case '2':
-                    return 'ftp://' . $url;
-                    break;
-                case '3':
-                    return 'mailto:' . $url;
-                break;
-                default:
-                    return $url;
-                break;
-            }
-        } else
-            return false;
+        $result=$this->getPageOverlay($result);
+        if (count($result)) {
+	        if ($result['doktype'] == 3) {
+	            $url = $result['url'];
+	            switch ($result['urltype']) {
+	                case '1':
+	                    return 'http://' . $url;
+	                    break;
+	                case '4':
+	                    return 'https://' . $url;
+	                    break;
+	                case '2':
+	                    return 'ftp://' . $url;
+	                    break;
+	                case '3':
+	                    return 'mailto:' . $url;
+	                break;
+	                default:
+	                    return $url;
+	                break;
+	                
+	            }
+	        } else {
+            	return false;
+	        }
+        }
+        else {
+        	return false;
+        }
     }
+    
     /**
      * Translates a URL with query string (GET parameters) into Speaking URL.
      * Called from t3lib_tstemplate::linkData

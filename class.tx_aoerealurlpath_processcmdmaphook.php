@@ -39,12 +39,19 @@ include_once (t3lib_extMgm::extPath('aoe_realurlpath') . 'class.tx_aoerealurlpat
 class tx_aoerealurlpath_processcmdmaphook
 {
    function processDatamap_afterDatabaseOperations ($status, $table, $id, $fieldArray, &$reference) {  
-   	                       
+   	                    
     	if ($table=='pages') {
     		 $cache = new tx_aoerealurlpath_cachemgmt($GLOBALS['BE_USER']->workspace, 0);
 	         $cache->markAsDirtyCompletePid($id);
-	        
-    	}
+	    }
+       if ($table=='pages_language_overlay') {
+          
+           $pid=$reference->checkValue_currentRecord['pid'];
+           if ($pid) {
+    		 $cache = new tx_aoerealurlpath_cachemgmt($GLOBALS['BE_USER']->workspace, 0);
+	         $cache->markAsDirtyCompletePid($pid);
+           }
+	    }
 	}	
 }
 ?>
