@@ -62,9 +62,11 @@ class tx_aoerealurlpath_crawlerhook
 				//flush realurl cache for this page:
 				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urlencodecache', 'page_id='.intval($GLOBALS['TSFE']->id));
 				$GLOBALS['TYPO3_DB']->exec_DELETEquery('tx_realurl_urldecodecache', 'page_id='.intval($GLOBALS['TSFE']->id));
-		
-			
-				$pObj->applicationData['tx_crawler']['log'][]='force linkgeneration: '.$GLOBALS['TSFE']->cObj->typolink( 'test', $lconf );
+				$GLOBALS['TSFE']->applicationData['tx_realurl']['_CACHE']=array();
+				$loginfos='(lang: '.$GLOBALS['TSFE']->sys_language_uid.' langc:'.$GLOBALS['TSFE']->sys_language_content.')';
+				$pObj->applicationData['aoe_realurlpath']['crawlermode']=TRUE;
+				$pObj->applicationData['tx_crawler']['log'][]='force linkgeneration: '.$GLOBALS['TSFE']->cObj->typolink( 'test', $lconf ).$loginfos;
+		        $pObj->applicationData['aoe_realurlpath']['crawlermode']=FALSE;
 		} 
 	}
 }

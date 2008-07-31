@@ -45,9 +45,9 @@ class tx_aoerealurlpath_pagepath
 {
     var $generator; //help object for generating paths
     var $insert = false;
-    //private
-    var $useUnstrictCacheWhere = FALSE; //flag which indicades that the cache should be checked without using workspace and language id
-    /** Main function -> is called from real_url
+
+    
+	/** Main function -> is called from real_url
      * parameters and results are in $params (some by reference)
      *
      * @param	array		Parameters passed from parent object, "tx_realurl". Some values are passed by reference! (paramKeyValues, pathParts and pObj)
@@ -56,6 +56,10 @@ class tx_aoerealurlpath_pagepath
      */
     function main ($params, $ref)
     {
+        
+    	if ($this->_isCrawlerRun()) {
+            $GLOBALS['TSFE']->applicationData['tx_crawler']['log'][]='aoe_realurlpath main';
+		}
         // Setting internal variables:
         //debug($params);
         $this->pObj = &$ref;
@@ -97,7 +101,10 @@ class tx_aoerealurlpath_pagepath
         if (! is_numeric($pageId)) {
             $pageId = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($pageId);
         }
-        if ($cached = $this->cachemgmt->isInCache($pageId)) {
+        if ($this->_isCrawlerRun()) {
+            $GLOBALS['TSFE']->applicationData['tx_crawler']['log'][]='aoe_realurlpath: _id2alias /'.$this->_getLanguageVar().'/'.$this->_getWorkspaceId();
+		}
+        if ($cached = $this->cachemgmt->isInCache($pageId) && !$this->_isCrawlerRun()) {
             $buildedPath = $cached;
         } else {
             $buildPageArray = $this->generator->build($pageId, $this->_getLanguageVar(), $this->_getWorkspaceId());
@@ -210,6 +217,22 @@ class tx_aoerealurlpath_pagepath
             }
         }
         return 0;
+    }
+    
+    /**
+     * returns true/false if the current context is within a crawler call (procInstr. tx_cachemgm_recache)
+     * This is used for some logging. The status is cached for performance reasons
+     *
+     * @return boolean
+     */
+    function _isCrawlerRun() {
+        if ($GLOBALS['TSFE']->applicationData['aoe_realurlpath']['crawlermode']) {
+        	return true;
+    	}
+    	else {
+    		return false;
+    	}
+        
     }
 }
 ?>
