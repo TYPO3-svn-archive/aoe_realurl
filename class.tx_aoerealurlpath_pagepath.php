@@ -57,9 +57,7 @@ class tx_aoerealurlpath_pagepath
     function main ($params, $ref)
     {
         
-    	if ($this->_isCrawlerRun()) {
-            $GLOBALS['TSFE']->applicationData['tx_crawler']['log'][]='aoe_realurlpath main';
-		}
+    
         // Setting internal variables:
         //debug($params);
         $this->pObj = &$ref;
@@ -101,15 +99,21 @@ class tx_aoerealurlpath_pagepath
         if (! is_numeric($pageId)) {
             $pageId = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($pageId);
         }
-        if ($this->_isCrawlerRun()) {
-            $GLOBALS['TSFE']->applicationData['tx_crawler']['log'][]='aoe_realurlpath: _id2alias /'.$this->_getLanguageVar().'/'.$this->_getWorkspaceId();
-		}
+        if ($this->_isCrawlerRun() && $GLOBALS['TSFE']->id==$pageId ) {
+            $GLOBALS['TSFE']->applicationData['tx_crawler']['log'][]='aoe_realurlpath: _id2alias '.$pageId.'/'.$this->_getLanguageVar().'/'.$this->_getWorkspaceId();
+		    //clear this page cache:
+		    $this->cachemgmt->markAsDirtyCompletePid($pageId);
+        }
+        
         if ($cached = $this->cachemgmt->isInCache($pageId) && !$this->_isCrawlerRun()) {
             $buildedPath = $cached;
         } else {
             $buildPageArray = $this->generator->build($pageId, $this->_getLanguageVar(), $this->_getWorkspaceId());
             $buildedPath = $buildPageArray['path'];
             $buildedPath = $this->cachemgmt->storeUniqueInCache($this->generator->getPidForCache(), $buildedPath);
+            if ($this->_isCrawlerRun() && $GLOBALS['TSFE']->id==$pageId ) {
+                $GLOBALS['TSFE']->applicationData['tx_crawler']['log'][]='created: '.$buildedPath.' pid:'.$pageId.'/'.$this->generator->getPidForCache();
+            }
         }
         if ($buildedPath) {
             $pagePath_exploded = explode('/', $buildedPath);
@@ -226,13 +230,15 @@ class tx_aoerealurlpath_pagepath
      * @return boolean
      */
     function _isCrawlerRun() {
-        if ($GLOBALS['TSFE']->applicationData['aoe_realurlpath']['crawlermode']) {
-        	return true;
-    	}
-    	else {
-    		return false;
-    	}
-        
+        if (t3lib_extMgm::isLoaded('crawler')
+				&& $GLOBALS['TSFE']->applicationData['tx_crawler']['running']
+				&& in_array('tx_cachemgm_recache', $GLOBALS['TSFE']->applicationData['tx_crawler']['parameters']['procInstructions']))	{
+           return true;
+		}
+		else {
+		    return false;
+		}
+					
     }
 }
 ?>
