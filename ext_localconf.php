@@ -7,8 +7,11 @@ if ($confArr['applyPatch'] == 1) {
     $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl.php'] = t3lib_extMgm::extPath('aoe_realurlpath') . 'patch/class.ux_tx_realurl.php';
 }
 if ($confArr['addpageOverlayFields'] == 1) {
-    $GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= ',tx_aoerealurlpath_overridesegment,tx_aoerealurlpath_overridepath,tx_aoerealurlpath_excludefrommiddle';
+    $GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'] .= ',tx_aoerealurlpath_overridesegment,tx_aoerealurlpath_overridepath,tx_aoerealurlpath_excludefrommiddle';
 }
+//force more fields in the rootline:
+$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= ',tx_aoerealurlpath_overridesegment,tx_aoerealurlpath_overridepath,tx_aoerealurlpath_excludefrommiddle';
+
 
 //register hook to mark cache as dirty
 $GLOBALS ['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass']['aoe_realurlpath'] = 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_processcmdmaphook.php:&tx_aoerealurlpath_processcmdmaphook';
