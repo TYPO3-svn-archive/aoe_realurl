@@ -101,7 +101,7 @@ class tx_aoerealurlpath_cachemgmt
      **/
     function checkCacheWithDecreasingPath ($pagePathOrigin, &$keepPath)
     {
-       return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, &$keepPath,FALSE);
+       return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, $keepPath,FALSE);
     }
 	
 	/**
@@ -113,7 +113,7 @@ class tx_aoerealurlpath_cachemgmt
      **/
     function checkHistoryCacheWithDecreasingPath ($pagePathOrigin, &$keepPath)
     {
-        return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, &$keepPath,TRUE);
+        return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, $keepPath,TRUE);
     }
     
     function _checkACacheTableWithDecreasingPath($pagePathOrigin, &$keepPath,$inHistoryTable=FALSE) {
@@ -225,8 +225,14 @@ class tx_aoerealurlpath_cachemgmt
     }
     function getCacheRowForPid($pid) {
     	$row=false;
-    	$where = "pageid=" . intval($pid) . $this->_getAddCacheWhere();
-        $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("*", "tx_aoerealurlpath_cache", $where);
+    	$where = 'pageid=' . intval($pid) . $this->_getAddCacheWhere();
+		if (method_exists($GLOBALS['TYPO3_DB'], 'exec_SELECTquery_master')) {
+			// Force select to use master server in t3p_scalable
+			$query = $GLOBALS['TYPO3_DB']->exec_SELECTquery_master('*', 'tx_aoerealurlpath_cache', $where);
+		}
+		else {
+			$query = $GLOBALS['TYPO3_DB']->exec_SELECTquery('*', 'tx_aoerealurlpath_cache', $where);
+		}
         if ($query)
             $row = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
         return $row;
