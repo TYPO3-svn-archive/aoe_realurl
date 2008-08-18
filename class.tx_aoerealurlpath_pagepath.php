@@ -105,7 +105,7 @@ class tx_aoerealurlpath_pagepath
 		    $this->cachemgmt->markAsDirtyCompletePid($pageId);
         }
         
-        if ($cached = $this->cachemgmt->isInCache($pageId) && !$this->_isCrawlerRun()) {
+        if (($cached = $this->cachemgmt->isInCache($pageId)) && !$this->_isCrawlerRun()) {
             $buildedPath = $cached;
         } else {
             $buildPageArray = $this->generator->build($pageId, $this->_getLanguageVar(), $this->_getWorkspaceId());
