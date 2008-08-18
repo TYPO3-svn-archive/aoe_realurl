@@ -175,9 +175,13 @@ class tx_aoerealurlpath_cachemgmt
     function _readCacheForPath ($pagePath)
     {
         $where = "path=\"" . $pagePath . '"' . $this->_getAddCacheWhere(TRUE);
-        $res = $GLOBALS['TYPO3_DB']->exec_SELECTquery("*", "tx_aoerealurlpath_cache", $where);
-        #$query = $GLOBALS['TYPO3_DB']->SELECTquery("*","tx_aoerealurlpath_cache",$where);
-        #debug($query);
+        if (method_exists($GLOBALS['TYPO3_DB'], 'exec_SELECTquery_master')) {
+                // Force select to use master server in t3p_scalable
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery_master("*", "tx_aoerealurlpath_cache", $where);
+        }
+        else {
+		$res = $GLOBALS['TYPO3_DB']->exec_SELECTquery("*", "tx_aoerealurlpath_cache", $where);
+        }
         if ($res)
             $result = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($res);
         if ($result['pageid']) {
