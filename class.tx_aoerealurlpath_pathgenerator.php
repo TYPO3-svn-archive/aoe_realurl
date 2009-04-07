@@ -45,14 +45,17 @@ class tx_aoerealurlpath_pathgenerator
     function init ($conf)
     {
         $this->conf = $conf;
-        //		$this->extconfArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['aoe_realurlpath']);
+        $this->extconfArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['aoe_realurlpath']);
     }
     /**
      *	 returns buildPageArray
      **/
     function build ($pid, $langid, $workspace)
     {
-        if ($shortCutPid = $this->_checkForShortCutPageAndGetTarget($pid)) {
+        
+    
+    
+        if ($shortCutPid = $this->_checkForShortCutPageAndGetTarget($pid,$langid,$workspace)) {
             $pid = $shortCutPid;
         }
         $this->pidForCache = $pid;
@@ -88,15 +91,29 @@ class tx_aoerealurlpath_pathgenerator
     {
         return $this->pidForCache;
     }
-    function _checkForShortCutPageAndGetTarget ($id, $reclevel = 0)
+    function _checkForShortCutPageAndGetTarget ($id,$langid = 0,$workspace = 0, $reclevel = 0)
     {
         if ($reclevel > 20) {
             return false;
         }
-        $where = "uid=\"" . $id . "\"";
-        $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("doktype,shortcut,shortcut_mode", "pages", $where);
-        if ($query)
-            $result = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
+        $this->_initSysPage(0,$workspace);  // check defaultlang since overlays should not contain this (usually)
+        $result = $this->sys_page->getPage($id);
+
+        // if overlay for the of shortcuts is requested
+        if($this->extconfArr['localizeShortcuts'] && t3lib_div::inList($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'],'shortcut') && $langid) {
+            $relevantLangId = $langid;
+            if($this->extconfArr['useLanguagevisibility']) {
+                require_once(t3lib_extMgm::extPath("languagevisibility").'class.tx_languagevisibility_feservices.php');            
+                $relevantLangId = tx_languagevisibility_feservices::getOverlayLanguageIdForElementRecord($id,'pages',$langid);
+            }
+            
+            $resultOverlay = $this->sys_page->getPageOverlay($id,$relevantLangId);
+            if($resultOverlay["shortcut"]) {
+                $result["shortcut"] = $resultOverlay["shortcut"];
+            }
+        }
+
+           
         if ($result['doktype'] == 4) {
             switch ($result['shortcut_mode']) {
                 case '1': //firstsubpage
@@ -107,7 +124,7 @@ class tx_aoerealurlpath_pathgenerator
                     $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("uid", "pages", $where, '', 'sorting', '0,1');
                     if ($query)
                         $resultfirstpage = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
-                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($resultfirstpage['uid'], $reclevel ++);
+                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($resultfirstpage['uid'],$langid,$workspace , $reclevel ++);
                     if ($subpageShortCut !== false) {
                         return $subpageShortCut;
                     } else {
@@ -119,7 +136,7 @@ class tx_aoerealurlpath_pathgenerator
                     break;
                 default:
                     //look recursive:
-                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($result['shortcut'], $reclevel ++);
+                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($result['shortcut'],$langid,$workspace , $reclevel ++);
                     if ($subpageShortCut !== false) {
                         return $subpageShortCut;
                     } else {
@@ -137,15 +154,7 @@ class tx_aoerealurlpath_pathgenerator
     function _getRootLine ($pid, $langID, $wsId, $mpvar = '')
     {
         // Get rootLine for current site (overlaid with any language overlay records).
-        if (! is_object($this->sys_page)) { // Create object if not found before:
-            // Initialize the page-select functions.
-            $this->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
-        }
-        $this->sys_page->sys_language_uid = $langID;
-        if ($wsId != 0 && is_numeric($wsId)) {
-            $this->sys_page->versioningWorkspaceId = $wsId;
-            $this->sys_page->versioningPreview = 1;
-        }
+        $this->_initSysPage($langID, $wsId);
         $rootLine = $this->sys_page->getRootLine($pid, $mpvar);
         //	print_r($rootLine);
         return $rootLine;
@@ -240,5 +249,18 @@ class tx_aoerealurlpath_pathgenerator
         // Return encoded URL:
         return rawurlencode($processedTitle);
     }
+    
+    function _initSysPage($langID,$workspace) {
+        if (! is_object($this->sys_page)) { // Create object if not found before:
+            // Initialize the page-select functions.
+            $this->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
+        }
+        $this->sys_page->sys_language_uid = $langID;
+        if ($workspace!= 0 && is_numeric($workspace)) {
+            $this->sys_page->versioningWorkspaceId = $workspace;
+            $this->sys_page->versioningPreview = 1;
+        }    
+    }
+    
 }
 ?>
