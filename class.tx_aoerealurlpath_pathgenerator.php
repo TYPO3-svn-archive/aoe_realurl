@@ -41,7 +41,7 @@ class tx_aoerealurlpath_pathgenerator
 {
     var $pidForCache;
     var $conf; //conf from reaulurl configuration (segTitleFieldList...)
-    //	var $extconfArr; //ext_conf_template vars
+    var $extconfArr; //ext_conf_template vars
     function init ($conf)
     {
         $this->conf = $conf;
@@ -52,9 +52,6 @@ class tx_aoerealurlpath_pathgenerator
      **/
     function build ($pid, $langid, $workspace)
     {
-        
-    
-    
         if ($shortCutPid = $this->_checkForShortCutPageAndGetTarget($pid,$langid,$workspace)) {
             $pid = $shortCutPid;
         }
@@ -112,8 +109,7 @@ class tx_aoerealurlpath_pathgenerator
                 $result["shortcut"] = $resultOverlay["shortcut"];
             }
         }
-
-           
+            
         if ($result['doktype'] == 4) {
             switch ($result['shortcut_mode']) {
                 case '1': //firstsubpage
@@ -155,8 +151,7 @@ class tx_aoerealurlpath_pathgenerator
     {
         // Get rootLine for current site (overlaid with any language overlay records).
         $this->_initSysPage($langID, $wsId);
-        $rootLine = $this->sys_page->getRootLine($pid, $mpvar);
-        //	print_r($rootLine);
+        $rootLine = $this->sys_page->getRootLine($pid, $mpvar);        
         return $rootLine;
     }
     /**
@@ -259,7 +254,11 @@ class tx_aoerealurlpath_pathgenerator
         if ($workspace!= 0 && is_numeric($workspace)) {
             $this->sys_page->versioningWorkspaceId = $workspace;
             $this->sys_page->versioningPreview = 1;
-        }    
+        } else {
+            $this->sys_page->versioningWorkspaceId = 0;
+            $this->sys_page->versioningPreview = FALSE;
+            	
+        }
     }
     
 }

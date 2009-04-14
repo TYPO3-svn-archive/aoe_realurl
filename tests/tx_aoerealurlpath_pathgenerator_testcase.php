@@ -44,19 +44,33 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 	private $pathgenerator;
     
 	public function setUp() {
-		//$this->createDatabase();
-		//$db = $this->useTestDatabase();
+		$this->createDatabase();
+		$db = $this->useTestDatabase();
 		//create relevant tables:
-		//$GLOBALS['TYPO3_DB']->admin_query($string);
-		//$this->importExtensions(array('aoe_redirects'));
-		//$this->importDataSet(dirname(__FILE__). 'fixtures/tx_aoerealurlpath_pathgenerator_testcase_dataset.xml');
-		
+		$extList = array('corefake','realurl','aoe_realurlpath');
+		$extOptList = array('templavoila','languagevisibility','aoe_realurlpath','aoe_webex_tableextensions','realurl');
+        foreach($extOptList as $ext) {
+            if(t3lib_extMgm::isLoaded($ext)) {
+                $extList[] = $ext;
+            }
+        }
+        $this->importExtensions($extList);
+        
+		$this->importDataSet(dirname(__FILE__). '/fixtures/page-livews.xml');        
+		$this->importDataSet(dirname(__FILE__). '/fixtures/overlay-livews.xml');
+		$this->importDataSet(dirname(__FILE__). '/fixtures/page-ws.xml');
+		$this->importDataSet(dirname(__FILE__). '/fixtures/overlay-ws.xml');
 		
         $this->pathgenerator = new tx_aoerealurlpath_pathgenerator();
         $this->pathgenerator->init($this->fixture_defaultconfig());
-       
 	}
 	
+    public function tearDown() {
+		$this->cleanDatabase();
+   		$this->dropDatabase();
+		$GLOBALS['TYPO3_DB']->sql_select_db(TYPO3_db);
+    }
+    
 	public function test_canGetCorrectRootline ()
     {
         $result=$this->pathgenerator->_getRootline(87, 0, 0);
@@ -75,8 +89,6 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         // 2) Normal Level 2 page
         $result = $this->pathgenerator->build(83, 0, 0);
         $this->assertEquals($result['path'], 'excludeofmiddle', 'wrong path build: should be excludeofmiddle');
-        
-        
     }
 	public function test_canBuildPathsWithExcludeFromMiddle()
     {
@@ -86,8 +98,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         
         // page root->excludefrommiddle->subpage(with pathsegment)
         $result = $this->pathgenerator->build(87, 0, 0);
-        $this->assertEquals($result['path'], 'subpagepathsegment/sub-subpage', 'wrong path build: should be subpagepathsegment/sub-subpage');
-        
+        $this->assertEquals($result['path'], 'subpagepathsegment/sub-subpage', 'wrong path build: should be subpagepathsegment/sub-subpage');        
     }
     
 	public function test_canBuildPathsWithLanguageOverlay()
@@ -104,11 +115,10 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         $result = $this->pathgenerator->build(87, 2, 0);
         $this->assertEquals($result['path'], 'sub-subpage-austria', 'wrong path build: should be subpagepathsegment-austria');
         
-        //for french (5)
-        
+        //for french (5)        
         $result = $this->pathgenerator->build(86, 5, 0);
         $this->assertEquals($result['path'], 'languagemix-segment', 'wrong path build: should be languagemix-segment');
-        
+
     }
 	public function test_canBuildPathsInWorkspace()
     {
@@ -127,17 +137,38 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         //page languagemix in deutsch (only translated in ws)
         $result = $this->pathgenerator->build(85, 1, 1);
         $this->assertEquals($result['path'], 'subpage-ws-de', 'wrong path build: should be own/url/for/austria/in/ws');
-        
-        
-        
     }    
-    
-  
+
+    public function test_canBuildPathIfOverlayUsesNonLatinChars() {
+        $this->assertEquals(true,false);
+    }
     
     public function fixture_defaultconfig ()
     {
         $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 'rootpage_id' => '1' , 'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle');
         return $conf;
     }
+    
+	/**
+	 * Changes current database to test database
+	 *
+	 * @param string $databaseName	Overwrite test database name
+	 * @return object
+	 */
+	protected function useTestDatabase($databaseName = null) {
+		$db = $GLOBALS['TYPO3_DB'];
+
+		if ($databaseName) {
+			$database = $databaseName;
+		} else {
+			$database = $this->testDatabase;
+		}
+
+		if(!$db->sql_select_db($database)) {
+            die("Test Database not available");
+        }
+
+		return $db;
+	}
 }
 ?>
