@@ -131,7 +131,11 @@ class tx_aoerealurlpath_pathgenerator
                     return false;
                     break;
                 default:
-                    //look recursive:
+                    if($result['shortcut'] == $id) {
+                        return false;
+                    }
+
+                    //look recursive:                    
                     $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($result['shortcut'],$langid,$workspace , $reclevel ++);
                     if ($subpageShortCut !== false) {
                         return $subpageShortCut;
@@ -144,7 +148,7 @@ class tx_aoerealurlpath_pathgenerator
             return false;
     }
     /**
-     * @param $pid Pageid of tzhe page where the rootline should be retrieved
+     * @param $pid Pageid of the page where the rootline should be retrieved
      * @return array with rootline for pid
      **/
     function _getRootLine ($pid, $langID, $wsId, $mpvar = '')
@@ -188,14 +192,20 @@ class tx_aoerealurlpath_pathgenerator
         foreach ($rootline as $key => $value) {
             //check if the page should exlude from path (if not last)
             if ($value['tx_aoerealurlpath_excludefrommiddle'] && $i != $size) {} else //the normal way
-{
-                foreach ($segment as $segmentName) {
-                    if ($value[$segmentName] != '') {
-                        $path[] = $this->encodeTitle($value[$segmentName]);
-                        break;
-                        //$value['uid']
+            {
+
+                //t3lib_div::debug(array("lang"=>$rootline,"default"=>$defaultLangRootline));
+            
+                $pathSeg = $this->_getPathSeg($value,$segment);
+                if(strcmp($pathSeg,'')===0) {
+                    if((strcmp($pathSeg,'')===0)  && $value['_PAGES_OVERLAY']) {
+                        $pathSeg = $this->_getPathSeg($this->_getDefaultRecord($value),$segment);
+                    }
+                    if(strcmp($pathSeg,'')===0) {
+                        $pathSeg = 'page_'.$value['uid'];
                     }
                 }
+                $path[] = $pathSeg;
             }
             $i ++;
         }
@@ -205,6 +215,27 @@ class tx_aoerealurlpath_pathgenerator
         //cleanup path		
         return $path;
     }
+    
+    function _getPathSeg($pageRec,$segments) {
+        $retVal = '';
+        foreach ($segments as $segmentName) {
+            if ($this->encodeTitle($pageRec[$segmentName]) != '') {
+                $retVal = $this->encodeTitle($pageRec[$segmentName]);
+                break;
+                //$value['uid']
+            }
+        }
+        return $retVal;
+    }
+    
+    function _getDefaultRecord($l10nrec) {
+        $lang = $this->sys_page->sys_language_uid;
+        $this->sys_page->sys_language_uid = 0;
+        $rec = $this->sys_page->getPage($l10nrec['uid']);
+        $this->sys_page->sys_language_uid = $lang;
+        return $rec;
+    }   
+    
     /*******************************
      *
      * Helper functions

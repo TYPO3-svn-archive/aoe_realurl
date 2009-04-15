@@ -89,6 +89,10 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         // 2) Normal Level 2 page
         $result = $this->pathgenerator->build(83, 0, 0);
         $this->assertEquals($result['path'], 'excludeofmiddle', 'wrong path build: should be excludeofmiddle');
+
+        // 3) Page without title informations
+        $result = $this->pathgenerator->build(94, 0, 0);
+        $this->assertEquals($result['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (last page should have default name)');
     }
 	public function test_canBuildPathsWithExcludeFromMiddle()
     {
@@ -139,8 +143,29 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         $this->assertEquals($result['path'], 'subpage-ws-de', 'wrong path build: should be own/url/for/austria/in/ws');
     }    
 
+    public function test_canBuildShortcutPaths() {
+        // instead of shortcut page the shortcut target should be used within path
+        $result = $this->pathgenerator->build(92, 0, 0);
+        $this->assertEquals($result['path'], 'normal-3rd-level/subsection', 'wrong path build: shortcut from uid92 to uid91 should be resolved');
+        
+        // shortcuts with a reference to themselfs might be a problem
+        $result = $this->pathgenerator->build(95, 0, 0);
+        $this->assertEquals($result['path'], 'shortcut-page', 'wrong path build: shortcut shouldn\'t be resolved');
+    }
+
     public function test_canBuildPathIfOverlayUsesNonLatinChars() {
-        $this->assertEquals(true,false);
+    
+        // some non latin characters are replaced
+        $result = $this->pathgenerator->build(83, 4, 0);
+        $this->assertEquals($result['path'], 'page-exclude', 'wrong path build: should be pages-exclude');
+        
+        // overlay has no latin characters therefore the default record is used
+        $result = $this->pathgenerator->build(84, 4, 0);
+        $this->assertEquals($result['path'], 'normal-3rd-level', 'wrong path build: should be normal-3rd-level (value taken from default record)');
+        
+        // overlay has no latin characters therefore the default record is used
+        $result = $this->pathgenerator->build(94, 4, 0);
+        $this->assertEquals($result['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (value from default records and auto generated since non of the pages had relevant chars)');
     }
     
     public function fixture_defaultconfig ()
