@@ -90,62 +90,66 @@ class tx_aoerealurlpath_pathgenerator
     }
     function _checkForShortCutPageAndGetTarget ($id,$langid = 0,$workspace = 0, $reclevel = 0)
     {
-        if ($reclevel > 20) {
-            return false;
-        }
-        $this->_initSysPage(0,$workspace);  // check defaultlang since overlays should not contain this (usually)
-        $result = $this->sys_page->getPage($id);
-
-        // if overlay for the of shortcuts is requested
-        if($this->extconfArr['localizeShortcuts'] && t3lib_div::inList($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'],'shortcut') && $langid) {
-            $relevantLangId = $langid;
-            if($this->extconfArr['useLanguagevisibility']) {
-                require_once(t3lib_extMgm::extPath("languagevisibility").'class.tx_languagevisibility_feservices.php');            
-                $relevantLangId = tx_languagevisibility_feservices::getOverlayLanguageIdForElementRecord($id,'pages',$langid);
-            }
-            
-            $resultOverlay = $this->sys_page->getPageOverlay($id,$relevantLangId);
-            if($resultOverlay["shortcut"]) {
-                $result["shortcut"] = $resultOverlay["shortcut"];
-            }
-        }
-            
-        if ($result['doktype'] == 4) {
-            switch ($result['shortcut_mode']) {
-                case '1': //firstsubpage
-                    if ($reclevel > 10) {
-                        return false;
-                    }
-                    $where = "pid=\"" . $id . "\"";
-                    $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("uid", "pages", $where, '', 'sorting', '0,1');
-                    if ($query)
-                        $resultfirstpage = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
-                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($resultfirstpage['uid'],$langid,$workspace , $reclevel ++);
-                    if ($subpageShortCut !== false) {
-                        return $subpageShortCut;
-                    } else {
-                        return $resultfirstpage['uid'];
-                    }
-                    break;
-                case '2': //random
-                    return false;
-                    break;
-                default:
-                    if($result['shortcut'] == $id) {
-                        return false;
-                    }
-
-                    //look recursive:                    
-                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($result['shortcut'],$langid,$workspace , $reclevel ++);
-                    if ($subpageShortCut !== false) {
-                        return $subpageShortCut;
-                    } else {
-                        return $result['shortcut'];
-                    }
-                    break;
-            }
-        } else
-            return false;
+    	if ($this->conf['renderShortcuts']) {
+			return false;
+		} else {
+	        if ($reclevel > 20) {
+	            return false;
+	        }
+	        $this->_initSysPage(0,$workspace);  // check defaultlang since overlays should not contain this (usually)
+	        $result = $this->sys_page->getPage($id);
+	
+	        // if overlay for the of shortcuts is requested
+	        if($this->extconfArr['localizeShortcuts'] && t3lib_div::inList($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'],'shortcut') && $langid) {
+	            $relevantLangId = $langid;
+	            if($this->extconfArr['useLanguagevisibility']) {
+	                require_once(t3lib_extMgm::extPath("languagevisibility").'class.tx_languagevisibility_feservices.php');            
+	                $relevantLangId = tx_languagevisibility_feservices::getOverlayLanguageIdForElementRecord($id,'pages',$langid);
+	            }
+	            
+	            $resultOverlay = $this->sys_page->getPageOverlay($id,$relevantLangId);
+	            if($resultOverlay["shortcut"]) {
+	                $result["shortcut"] = $resultOverlay["shortcut"];
+	            }
+	        }
+	            
+	        if ($result['doktype'] == 4) {
+	            switch ($result['shortcut_mode']) {
+	                case '1': //firstsubpage
+	                    if ($reclevel > 10) {
+	                        return false;
+	                    }
+	                    $where = "pid=\"" . $id . "\"";
+	                    $query = $GLOBALS['TYPO3_DB']->exec_SELECTquery("uid", "pages", $where, '', 'sorting', '0,1');
+	                    if ($query)
+	                        $resultfirstpage = $GLOBALS['TYPO3_DB']->sql_fetch_assoc($query);
+	                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($resultfirstpage['uid'],$langid,$workspace , $reclevel ++);
+	                    if ($subpageShortCut !== false) {
+	                        return $subpageShortCut;
+	                    } else {
+	                        return $resultfirstpage['uid'];
+	                    }
+	                    break;
+	                case '2': //random
+	                    return false;
+	                    break;
+	                default:
+	                    if($result['shortcut'] == $id) {
+	                        return false;
+	                    }
+	
+	                    //look recursive:                    
+	                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($result['shortcut'],$langid,$workspace , $reclevel ++);
+	                    if ($subpageShortCut !== false) {
+	                        return $subpageShortCut;
+	                    } else {
+	                        return $result['shortcut'];
+	                    }
+	                    break;
+	            }
+	        } else
+	            return false;
+		}
     }
     /**
      * @param $pid Pageid of the page where the rootline should be retrieved
