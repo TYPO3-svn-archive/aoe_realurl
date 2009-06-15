@@ -99,18 +99,24 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
 				TABLE#langTable TR TD {
 					padding-left : 2px;
 					padding-right : 2px;
-					white-space: nowrap;
+					white-space: nowrap;					 
 				}
+				
+				TR.odd { background-color:#ddd; }
 				
 				TD.c-ok { background-color: #A8E95C; }
 				TD.c-ok-expired { background-color: #B8C95C; }
 				TD.c-shortcut { background-color: #B8E95C; font-weight: 200}
-				TD.c-nok { background-color: #E9CD5C; }
+				/*TD.c-nok { background-color: #E9CD5C; }*/
 				TD.c-leftLine {border-left: 2px solid black; }
-				.bgColor5 { font-weight: bold; }
+				TD.bgColor5 { font-weight: bold; }
 			';
             $marker = '/*###POSTCSSMARKER###*/';
-            $this->pObj->content = str_replace($marker, $css_content . chr(10) . $marker, $this->pObj->content);
+			if(!stristr($this->pObj->content,$marker)) {
+				$theOutput = '<style type="text/css">'.$css_content.'</style>' . chr(10).$theOutput;
+			} else {
+            	$this->pObj->content = str_replace($marker, $css_content . chr(10) . $marker, $this->pObj->content);
+			}
             $theOutput .= '<hr />AOE realurl path cache for workspace -' . $GLOBALS['BE_USER']->workspace;
             // Render information table:
             $theOutput .= $this->renderTable($tree);
@@ -135,6 +141,7 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
         $languageList = $this->getSystemLanguages();
         //print_r($languageList);
         //traverse Tree:
+		$rows = 0;
         foreach ($tree->tree as $data) {
             $tCells = array();
             $editUid = $data['row']['uid'];
@@ -203,21 +210,22 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
                     $tCells[] = '<td class="' . $status . ' c-leftLine">' .$viewPageLink. $path . '</td>';
                 }
             }
+			$rows++;
             $output .= '
-			<tr class="bgColor5">
+			<tr'.( ( $rows%2 ) ? ' class="odd"' : '' ).'>
 				' . implode('
 				', $tCells) . '
 			</tr>';
         }
         //first ROW:
         //****************
-        $firstRowCells[] = '<td>' . $LANG->getLL('lang_renderl10n_page', '1') . ':</td>';
+        $firstRowCells[] = '<td style="min-width:300px">' . $LANG->getLL('lang_renderl10n_page', '1') . ':</td>';
         foreach ($languageList as $language) {
             $langId = $language['uid'];
             $firstRowCells[] = '<td class="c-leftLine">' . $language['title'] . ' [' . $language['uid'] . ']</td>';
         }
         $output = '
-			<tr class="bgColor4">
+			<tr class="bgColor2">
 				' . implode('
 				', $firstRowCells) . '
 			</tr>' . $output;
