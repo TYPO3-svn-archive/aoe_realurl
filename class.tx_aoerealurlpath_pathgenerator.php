@@ -73,6 +73,7 @@ class tx_aoerealurlpath_pathgenerator
             $pathString = $overridePath;
         } elseif ($this->_getDelegationFieldname($lastPage['doktype'])) {
             $pathString = $this->_getDelegationTarget($lastPage);
+			if(!preg_match('/^[a-z]+:\/\//',$pathString)) $pathString = 'http://'.$pathString;
         } else {
             $pathString = $this->_buildPath($this->conf['segTitleFieldList'], $rootline);
         }
@@ -273,8 +274,8 @@ class tx_aoerealurlpath_pathgenerator
     function _getDelegationFieldname($doktype) {
         if (is_array($this->conf['delegation']) && array_key_exists($doktype,$this->conf['delegation'])) {
             return $this->conf['delegation'][$doktype];
-        } else if (is_array($this->extconf['delegation']) && array_key_exists($doktype,$this->extconf['delegation'])) {
-            return $this->extconf['delegation'][$doktype];
+		} else if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['aoe_realurlpath']['delegate']) && array_key_exists($doktype,$GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['aoe_realurlpath']['delegate'])) {
+            return $GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['aoe_realurlpath']['delegate'][$doktype];
         } else {
             return false;
         }
@@ -290,7 +291,9 @@ class tx_aoerealurlpath_pathgenerator
             $record = $this->sys_page->getPage($record['uid']);
     	}
 
-        return $record[$fieldname];
+		$parts = explode(' ',$record[$fieldname]);
+
+        return $parts[0];
     }
 
     /*******************************

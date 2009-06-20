@@ -182,6 +182,9 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
             		$hasEntry=TRUE;
                 	$path = $cacheRow['path'].' <small style="color: #555"><i>'.($cacheRow['dirty']?'X':'').'('.$cacheRow['rootpid'].')</i></small>';
             	}
+				if ($this->pathgen->isDelegationDoktype($data['row']['doktype'])) {
+                    $path.=' [Delegation]';
+                } 				
             	if (count($cacheHistoryRows)>0) {
             		$path.='[History:'.count($cacheHistoryRows).']';
             	}
@@ -193,7 +196,6 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
                     $path = '--- [shortcut]';
                     $status = 'c-shortcut';
                 } elseif ($this->pathgen->isDelegationDoktype($data['row']['doktype'])) {
-//                    $path = '--- [shortcut]';
                     $status = 'c-delegation';
                 } else {
                     $status = 'c-nok';
