@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2005 Kasper Skï¿½rhï¿½j
+ *  (c) 2008 AOE media GmbH
  *  All rights reserved
  *
  *  This script is part of the Typo3 project. The Typo3 project is
@@ -26,14 +26,16 @@
  ***************************************************************/
 /**
  *
- * @author	Daniel Pï¿½tzinger
+ * @author  Daniel Pötzinger
+ * @author  Tolleiv Nietsch
  */
 /*** TODO:
 	-check if internal cache array makes sense
  **/
 /**
  *
- * @author	Daniel Pï¿½tzinger
+ * @author  Daniel Pötzinger
+ * @author  Tolleiv Nietsch
  * @package realurl
  * @subpackage aoe_realurlpath
  */
@@ -42,6 +44,8 @@ class tx_aoerealurlpath_pathgenerator
     var $pidForCache;
     var $conf; //conf from reaulurl configuration (segTitleFieldList...)
     var $extconfArr; //ext_conf_template vars
+    var $doktypeCache = array();
+
     function init ($conf)
     {
         $this->conf = $conf;
@@ -53,8 +57,12 @@ class tx_aoerealurlpath_pathgenerator
     function build ($pid, $langid, $workspace)
     {
         if ($shortCutPid = $this->_checkForShortCutPageAndGetTarget($pid,$langid,$workspace)) {
+        	if( is_array($shortCutPid) &&  array_key_exists('path',$shortCutPid) &&  array_key_exists('rootPid',$shortCutPid) ) {
+                return $shortCutPid;
+        	}
             $pid = $shortCutPid;
         }
+
         $this->pidForCache = $pid;
         $rootline = $this->_getRootline($pid, $langid, $workspace);
         $firstPage = $rootline[0];
@@ -63,6 +71,8 @@ class tx_aoerealurlpath_pathgenerator
         $overridePath = $this->_stripSlashes($lastPage['tx_aoerealurlpath_overridepath']);
         if ($overridePath) {
             $pathString = $overridePath;
+        } elseif ($this->_getDelegationFieldname($lastPage['doktype'])) {
+            $pathString = $this->_getDelegationTarget($lastPage);
         } else {
             $pathString = $this->_buildPath($this->conf['segTitleFieldList'], $rootline);
         }
@@ -98,21 +108,21 @@ class tx_aoerealurlpath_pathgenerator
 	        }
 	        $this->_initSysPage(0,$workspace);  // check defaultlang since overlays should not contain this (usually)
 	        $result = $this->sys_page->getPage($id);
-	
+
 	        // if overlay for the of shortcuts is requested
 	        if($this->extconfArr['localizeShortcuts'] && t3lib_div::inList($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'],'shortcut') && $langid) {
 	            $relevantLangId = $langid;
 	            if($this->extconfArr['useLanguagevisibility']) {
-	                require_once(t3lib_extMgm::extPath("languagevisibility").'class.tx_languagevisibility_feservices.php');            
+	                require_once(t3lib_extMgm::extPath("languagevisibility").'class.tx_languagevisibility_feservices.php');
 	                $relevantLangId = tx_languagevisibility_feservices::getOverlayLanguageIdForElementRecord($id,'pages',$langid);
 	            }
-	            
+
 	            $resultOverlay = $this->sys_page->getPageOverlay($id,$relevantLangId);
 	            if($resultOverlay["shortcut"]) {
 	                $result["shortcut"] = $resultOverlay["shortcut"];
 	            }
 	        }
-	            
+
 	        if ($result['doktype'] == 4) {
 	            switch ($result['shortcut_mode']) {
 	                case '1': //firstsubpage
@@ -137,8 +147,8 @@ class tx_aoerealurlpath_pathgenerator
 	                    if($result['shortcut'] == $id) {
 	                        return false;
 	                    }
-	
-	                    //look recursive:                    
+
+	                    //look recursive:
 	                    $subpageShortCut = $this->_checkForShortCutPageAndGetTarget($result['shortcut'],$langid,$workspace , $reclevel ++);
 	                    if ($subpageShortCut !== false) {
 	                        return $subpageShortCut;
@@ -147,6 +157,19 @@ class tx_aoerealurlpath_pathgenerator
 	                    }
 	                    break;
 	            }
+	        } elseif ($this->_getDelegationFieldname($result['doktype'])) {
+
+	        	$target = $this->_getDelegationTarget($result, $langid, $workspace);
+                if(is_numeric($target)) {
+                	$res = $this->_checkForShortCutPageAndGetTarget($target, $langid, $workspace, $reclevel ++);
+                	//if the recursion fails we keep the original target
+                	if($res === false) {
+                		$res = $target;
+                	}
+                } else {
+                    $res = $result['uid'];
+                }
+                return $res;
 	        } else
 	            return false;
 		}
@@ -159,7 +182,7 @@ class tx_aoerealurlpath_pathgenerator
     {
         // Get rootLine for current site (overlaid with any language overlay records).
         $this->_initSysPage($langID, $wsId);
-        $rootLine = $this->sys_page->getRootLine($pid, $mpvar);        
+        $rootLine = $this->sys_page->getRootLine($pid, $mpvar);
         return $rootLine;
     }
     /**
@@ -199,7 +222,7 @@ class tx_aoerealurlpath_pathgenerator
             {
 
                 //t3lib_div::debug(array("lang"=>$rootline,"default"=>$defaultLangRootline));
-            
+
                 $pathSeg = $this->_getPathSeg($value,$segment);
                 if(strcmp($pathSeg,'')===0) {
                     if((strcmp($pathSeg,'')===0)  && $value['_PAGES_OVERLAY']) {
@@ -216,10 +239,10 @@ class tx_aoerealurlpath_pathgenerator
         //build the path
         $path = implode("/", $path);
         //debug($path);
-        //cleanup path		
+        //cleanup path
         return $path;
     }
-    
+
     function _getPathSeg($pageRec,$segments) {
         $retVal = '';
         foreach ($segments as $segmentName) {
@@ -231,15 +254,45 @@ class tx_aoerealurlpath_pathgenerator
         }
         return $retVal;
     }
-    
+
     function _getDefaultRecord($l10nrec) {
         $lang = $this->sys_page->sys_language_uid;
         $this->sys_page->sys_language_uid = 0;
         $rec = $this->sys_page->getPage($l10nrec['uid']);
         $this->sys_page->sys_language_uid = $lang;
         return $rec;
-    }   
-    
+    }
+
+    function isDelegationDoktype($doktype) {
+        if(!array_key_exists($doktype,$this->doktypeCache)) {
+            $this->doktypeCache[$doktype] = ($this->_getDelegationFieldname($doktype)) ? true : false;
+        }
+        return $this->doktypeCache[$doktype];
+    }
+
+    function _getDelegationFieldname($doktype) {
+        if (is_array($this->conf['delegation']) && array_key_exists($doktype,$this->conf['delegation'])) {
+            return $this->conf['delegation'][$doktype];
+        } else if (is_array($this->extconf['delegation']) && array_key_exists($doktype,$this->extconf['delegation'])) {
+            return $this->extconf['delegation'][$doktype];
+        } else {
+            return false;
+        }
+
+    }
+
+    function _getDelegationTarget($record, $langid=0, $workspace=0) {
+
+    	$fieldname = $this->_getDelegationFieldname($record['doktype']);
+
+    	if(!array_key_exists($fieldname,$record)) {
+            $this->_initSysPage($langid,$workspace);
+            $record = $this->sys_page->getPage($record['uid']);
+    	}
+
+        return $record[$fieldname];
+    }
+
     /*******************************
      *
      * Helper functions
@@ -279,7 +332,7 @@ class tx_aoerealurlpath_pathgenerator
         // Return encoded URL:
         return rawurlencode($processedTitle);
     }
-    
+
     function _initSysPage($langID,$workspace) {
         if (! is_object($this->sys_page)) { // Create object if not found before:
             // Initialize the page-select functions.
@@ -292,9 +345,9 @@ class tx_aoerealurlpath_pathgenerator
         } else {
             $this->sys_page->versioningWorkspaceId = 0;
             $this->sys_page->versioningPreview = FALSE;
-            	
+
         }
     }
-    
+
 }
 ?>

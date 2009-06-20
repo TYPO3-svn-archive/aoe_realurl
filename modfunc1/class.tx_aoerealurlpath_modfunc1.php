@@ -55,6 +55,11 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
             $theOutput = '';
             $cachemgmtClassName = t3lib_div::makeInstanceClassName('tx_aoerealurlpath_cachemgmt');
             $this->cachemgmt = new $cachemgmtClassName($GLOBALS['BE_USER']->workspace, 0, 1);
+
+            $pathgenClassName = t3lib_div::makeInstanceClassName('tx_aoerealurlpath_pathgenerator');
+            $this->pathgen = new $pathgenClassName();
+            $this->pathgen->init(array());
+
             // Depth selector:
             $h_func = t3lib_BEfunc::getFuncMenu($this->pObj->id, 'SET[depth]', $this->pObj->MOD_SETTINGS['depth'], $this->pObj->MOD_MENU['depth'], 'index.php');
             //$h_func.= t3lib_BEfunc::getFuncMenu($this->pObj->id,'SET[lang]',$this->pObj->MOD_SETTINGS['lang'],$this->pObj->MOD_MENU['lang'],'index.php');
@@ -99,14 +104,15 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
 				TABLE#langTable TR TD {
 					padding-left : 2px;
 					padding-right : 2px;
-					white-space: nowrap;					 
+					white-space: nowrap;
 				}
-				
+
 				TR.odd { background-color:#ddd; }
-				
+
 				TD.c-ok { background-color: #A8E95C; }
 				TD.c-ok-expired { background-color: #B8C95C; }
 				TD.c-shortcut { background-color: #B8E95C; font-weight: 200}
+				TD.c-delegation { background-color: #EE0; }
 				/*TD.c-nok { background-color: #E9CD5C; }*/
 				TD.c-leftLine {border-left: 2px solid black; }
 				TD.bgColor5 { font-weight: bold; }
@@ -152,7 +158,7 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
         	if (t3lib_div::_GP('_action_dirtyvisible') != '') {
                 $this->cachemgmt->markAsDirtyCompletePid($editUid);
             }
-            
+
             //first cell (tree):
             // Page icons / titles etc.
             $tCells[] = '<td' . ($data['row']['_CSSCLASS'] ? ' class="' . $data['row']['_CSSCLASS'] . '"' : '') . '>' . $data['HTML'] . htmlspecialchars(t3lib_div::fixed_lgd_cs($data['row']['title'], $titleLen)) . (strcmp($data['row']['nav_title'], '') ? ' [Nav: <em>' . htmlspecialchars(t3lib_div::fixed_lgd_cs($data['row']['nav_title'], $titleLen)) . '</em>]' : '') . '</td>';
@@ -165,7 +171,7 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
 	            }
                 $info = '';
                 $params = '&edit[pages][' . $editUid . ']=edit';
-                
+
                 $this->cachemgmt->setLanguageId($langId);
                 $cacheRow=$this->cachemgmt->getCacheRowForPid($editUid);
                 $cacheHistoryRows=$this->cachemgmt->getCacheHistoryRowsForPid($editUid);
@@ -181,16 +187,19 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
             	}
                 if ($isValidCache) {
                     $status = 'c-ok';
+                } elseif ($hasEntry) {
+                    $status = 'c-ok-expired';
                 } elseif ($data['row']['doktype'] == 4) {
                     $path = '--- [shortcut]';
                     $status = 'c-shortcut';
-                } elseif ($hasEntry) {
-                	$status = 'c-ok-expired';
+                } elseif ($this->pathgen->isDelegationDoktype($data['row']['doktype'])) {
+//                    $path = '--- [shortcut]';
+                    $status = 'c-delegation';
                 } else {
                     $status = 'c-nok';
                 }
                 $viewPageLink = '<a href="#" onclick="' . htmlspecialchars(t3lib_BEfunc::viewOnClick($data['row']['uid'], $GLOBALS['BACK_PATH'], '', '', '', '&L=###LANG_UID###')) . '">' . '<img' . t3lib_iconWorks::skinImg($GLOBALS['BACK_PATH'], 'gfx/zoom.gif', 'width="12" height="12"') . ' title="' . $LANG->getLL('lang_viewPage', '1') . '" border="0" alt="" />' . '</a>';
-                $viewPageLink=str_replace('###LANG_UID###',$langId,$viewPageLink);    
+                $viewPageLink=str_replace('###LANG_UID###',$langId,$viewPageLink);
                 if ($langId == 0) {
                     //Default
                     //"View page" link is created:
@@ -205,7 +214,7 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
                     // Put into cell:
                     $tCells[] = '<td class="' . $status . ' c-leftLine">' . $info . '</td>';
                 } else {
-                	
+
                     //Normal Languages:
                     $tCells[] = '<td class="' . $status . ' c-leftLine">' .$viewPageLink. $path . '</td>';
                 }
@@ -250,7 +259,7 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
         }
         return $outputArray;
     }
-    
+
 }
 if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/languagevisibility/modfunc1/class.tx_languagevisibility_modfunc1.php']) {
     include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/languagevisibility/modfunc1/class.tx_languagevisibility_modfunc1.php']);

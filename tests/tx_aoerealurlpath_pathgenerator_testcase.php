@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2007 Kasper Ligaard (ligaard@daimi.au.dk)
+ *  (c) 2008 AOE media GmbH
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -25,9 +25,9 @@
  * Test case for checking the PHPUnit 3.1.9
  *
  * WARNING: Never ever run a unit test like this on a live site!
- *
- *
- * @author	Daniel Pï¿½tzinger
+ * *
+ * @author  Daniel Pötzinger
+ * @author  Tolleiv Nietsch
  */
 
 //TODO: add testdatabase xml
@@ -112,7 +112,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
        	// page root->excludefrommiddle->languagemix (austria)
         $result = $this->pathgenerator->build(86, 2, 0);
         $this->assertEquals($result['path'], 'own/url/for/austria', 'wrong path build: should be own/url/for/austria');
-return;
+
         // page root->excludefrommiddle->subpage(with pathsegment)
         $result = $this->pathgenerator->build(85, 2, 0);
         $this->assertEquals($result['path'], 'subpagepathsegment-austria', 'wrong path build: should be subpagepathsegment-austria');
@@ -170,9 +170,37 @@ return;
         $this->assertEquals($result['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (value from default records and auto generated since non of the pages had relevant chars)');
     }
 
+    public function test_canResolvePathFromDeligatedFlexibleURLField() {
+
+        $this->pathgenerator->init($this->fixture_delegationconfig());
+
+        // Test direct delegation
+        $result = $this->pathgenerator->build(97, 0, 0);
+        $this->assertEquals($result['path'], 'deligation-target', 'wrong path build: deligation should be executed');
+
+        // Test multi-hop delegation
+        $result = $this->pathgenerator->build(96, 0, 0);
+        $this->assertEquals($result['path'], 'deligation-target', 'wrong path build: deligation should be executed');
+
+    }
+
+    public function test_canResolveURLFromDeligatedFlexibleURLField() {
+
+        $this->pathgenerator->init($this->fixture_delegationconfig());
+
+        $result = $this->pathgenerator->build(99, 0, 0);
+        $this->assertEquals($result['path'], 'www.aoemedia.de', 'wrong path build: deligation should be executed');
+
+    }
+
     public function fixture_defaultconfig ()
     {
         $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 'rootpage_id' => '1' , 'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle');
+        return $conf;
+    }
+    public function fixture_delegationconfig ()
+    {
+        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 'rootpage_id' => '1' , 'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle', 'delegation'=>array( 77 => 'url' ) );
         return $conf;
     }
 
