@@ -189,7 +189,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         $this->pathgenerator->init($this->fixture_delegationconfig());
 
         $result = $this->pathgenerator->build(99, 0, 0);
-        $this->assertEquals($result['path'], 'www.aoemedia.de', 'wrong path build: deligation should be executed');
+        $this->assertEquals($result['path'], 'http://www.aoemedia.de', 'wrong path build: deligation should be executed');
 
     }
 
