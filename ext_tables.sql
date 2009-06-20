@@ -29,7 +29,7 @@ CREATE TABLE tx_aoerealurlpath_cache (
 	rootpid int(11) DEFAULT '0' NOT NULL,
 	languageid int(11) DEFAULT '0' NOT NULL,	
 	pageid int(11) DEFAULT '0' NOT NULL,
-	path varchar(255) DEFAULT '' NOT NULL,	
+	path text DEFAULT '' NOT NULL,	
 	dirty tinyint(3) DEFAULT '0' NOT NULL
 	
 	PRIMARY KEY (pageid,workspace,rootpid,languageid),
