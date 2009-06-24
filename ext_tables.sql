@@ -34,7 +34,7 @@ CREATE TABLE tx_aoerealurlpath_cache (
 	
 	PRIMARY KEY (pageid,workspace,rootpid,languageid),
 	KEY path (path)
-);
+) ENGINE=InnoDB;
 
 #
 # Table structure for table 'tx_aoerealurlpath_cachehistory'
@@ -51,5 +51,5 @@ CREATE TABLE tx_aoerealurlpath_cachehistory (
 	
 	PRIMARY KEY (uid),
 	KEY path (path)
-);
+) ENGINE=InnoDB;
 

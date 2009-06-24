@@ -47,7 +47,7 @@ class tx_aoerealurlpath_cachemgmt
     var $languageId;
     //unique path check
     var $rootPid;
-   
+
     var $cacheTimeOut = 0; //timeout in seconds for cache entries
     var $useUnstrictCacheWhere = FALSE;
     function tx_aoerealurlpath_cachemgmt ($workspace, $languageid)
@@ -79,7 +79,7 @@ class tx_aoerealurlpath_cachemgmt
     {
         $this->useUnstrictCacheWhere = FALSE;
     }
-    
+
     function getWorkspaceId ()
     {
         return $this->workspaceId;
@@ -103,7 +103,7 @@ class tx_aoerealurlpath_cachemgmt
     {
        return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, $keepPath,FALSE);
     }
-	
+
 	/**
      * important function: checks the path in the cache: if not found the check against cache is repeted without the last pathpart
      * @param array  $pagePathOrigin  the path which should be searched in cache
@@ -115,7 +115,7 @@ class tx_aoerealurlpath_cachemgmt
     {
         return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, $keepPath,TRUE);
     }
-    
+
     function _checkACacheTableWithDecreasingPath($pagePathOrigin, &$keepPath,$inHistoryTable=FALSE) {
     	$sizeOfPath = count($pagePathOrigin);
         $pageId = false;
@@ -145,6 +145,7 @@ class tx_aoerealurlpath_cachemgmt
      **/
     function storeUniqueInCache ($pid, $buildedPath)
     {
+    	$GLOBALS['TYPO3_DB']->sql_query('BEGIN');
         #echo '<hr> request to store:'.$pid.' '.$buildedPath;
         if ($this->isInCache($pid) === false) {
         	$this->_checkForCleanupCache($pid,$buildedPath);
@@ -165,6 +166,7 @@ class tx_aoerealurlpath_cachemgmt
             if ($GLOBALS['TYPO3_DB']->exec_INSERTquery("tx_aoerealurlpath_cache", $data)) {} else {    #echo 'error';
             }
         }
+        $GLOBALS['TYPO3_DB']->sql_query('COMMIT');
         return $buildedPath;
     }
     /**
@@ -224,7 +226,7 @@ class tx_aoerealurlpath_cachemgmt
         	else {
         		return false;
         	}
-        	
+
         }
     }
     function getCacheRowForPid($pid) {
@@ -254,13 +256,13 @@ class tx_aoerealurlpath_cachemgmt
     	$row=$this->getCacheRowForPid($pid);
         if (!is_array($row)) {
             return false;
-        } 
+        }
         elseif (!$this->_isCacheRowStillValid($row)) {
         	if ($newPath != $row['path'])
         		$this->insertInCacheHistory($row);
         	$this->_delCacheForPid($row['pageid']);
         }
-        	
+
     }
     function _isCacheRowStillValid($row) {
     	if ($row['dirty'] ==1) {
@@ -268,12 +270,12 @@ class tx_aoerealurlpath_cachemgmt
         }
         elseif (($row['tstamp'] + $this->cacheTimeOut) < time()) {
             return false;
-        } 
+        }
         else {
         	return true;
         }
     }
-    
+
     function _delCacheForPid ($pid)
     {
         $where = "pageid=" . intval($pid) . $this->_getAddCacheWhere();
@@ -302,7 +304,7 @@ class tx_aoerealurlpath_cachemgmt
     }
 	function clearAllCacheHistory ()
     {
-       
+
         $GLOBALS['TYPO3_DB']->exec_DELETEquery("tx_aoerealurlpath_cachehistory", '1=1');
     }
     /**
