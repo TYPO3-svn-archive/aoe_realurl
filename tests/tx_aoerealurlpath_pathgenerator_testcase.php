@@ -82,6 +82,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         $this->assertTrue(isset($first['tx_aoerealurlpath_overridesegment']), 'tx_aoerealurlpath_overridesegment should be set');
         $this->assertTrue(isset($first['tx_aoerealurlpath_excludefrommiddle']), 'tx_aoerealurlpath_excludefrommiddle should be set');
     }
+
     public function test_canBuildStandardPaths()
     {
        	// 1) Rootpage
@@ -96,15 +97,31 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         $result = $this->pathgenerator->build(94, 0, 0);
         $this->assertEquals($result['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (last page should have default name)');
     }
-	public function test_canBuildPathsWithExcludeFromMiddle()
+
+    public function test_canBuildPathsWithExcludeFromMiddle()
     {
-       	// page root->excludefrommiddle->subpage(with pathsegment)
+        // page root->excludefrommiddle->subpage(with pathsegment)
         $result = $this->pathgenerator->build(85, 0, 0);
         $this->assertEquals($result['path'], 'subpagepathsegment', 'wrong path build: should be subpage');
 
         // page root->excludefrommiddle->subpage(with pathsegment)
         $result = $this->pathgenerator->build(87, 0, 0);
         $this->assertEquals($result['path'], 'subpagepathsegment/sub-subpage', 'wrong path build: should be subpagepathsegment/sub-subpage');
+    }
+
+    public function test_canBuildPathsWithOverridePathSetting()
+    {
+        $result = $this->pathgenerator->build(80, 0, 0);
+        $this->assertEquals($result['path'], 'override/path/item', 'wrong path build: should be override/path/item');
+
+        $result = $this->pathgenerator->build(81, 0, 0);
+        $this->assertEquals($result['path'], 'specialpath/withspecial/chars', 'wrong path build: should be specialpath/withspecial/chars');
+    }
+
+    public function test_invalidOverridePathWillFallBackToDefaultGeneration()
+    {
+        $result = $this->pathgenerator->build(82, 0, 0);
+        $this->assertEquals($result['path'], 'invalid-overridepath', 'wrong path build: should be invalid-overridepath');
     }
 
 	public function test_canBuildPathsWithLanguageOverlay()

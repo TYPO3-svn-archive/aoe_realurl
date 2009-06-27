@@ -46,18 +46,18 @@ class tx_aoerealurlpath_pagepath
     var $generator; //help object for generating paths
     var $insert = false;
 
-    
+
 	/** Main function -> is called from real_url
      * parameters and results are in $params (some by reference)
      *
      * @param	array		Parameters passed from parent object, "tx_realurl". Some values are passed by reference! (paramKeyValues, pathParts and pObj)
-     * @param	tx_realurl		Copy of parent object. 
+     * @param	tx_realurl		Copy of parent object.
      * @return	mixed		Depends on branching.
      */
     function main ($params, $ref)
     {
-        
-    
+
+
         // Setting internal variables:
         //debug($params);
         $this->pObj = &$ref;
@@ -70,7 +70,7 @@ class tx_aoerealurlpath_pagepath
         $this->cachemgmt = new $cachemgmtClassName($this->_getWorkspaceId(), $this->_getLanguageVar());
         $this->cachemgmt->setCacheTimeout($this->conf['cacheTimeOut']);
         $this->cachemgmt->setRootPid($this->_getRootPid());
-        	
+
         switch ((string) $params['mode']) {
             case 'encode':
                 $path = $this->_id2alias($params['paramKeyValues']);
@@ -104,7 +104,7 @@ class tx_aoerealurlpath_pagepath
 		    //clear this page cache:
 		    $this->cachemgmt->markAsDirtyCompletePid($pageId);
         }
-        
+
         if ($this->cachemgmt->isInCache($pageId) ) { //&& !$this->_isCrawlerRun()
             $buildedPath = $this->cachemgmt->isInCache($pageId);
         } else {
@@ -147,7 +147,7 @@ class tx_aoerealurlpath_pagepath
             $keepPath = array();
             $pageId = $this->cachemgmt->checkHistoryCacheWithDecreasingPath($pagePathOrigin, $keepPath);
          }
-        
+
         $pagePath = $keepPath;
         return $pageId;
     }
@@ -156,7 +156,7 @@ class tx_aoerealurlpath_pagepath
     {
         if (t3lib_extMgm::isLoaded('aoe_redirects')) {
 	        require_once(t3lib_extMgm::extPath('aoe_redirects').'api/class.redirectmanager.php');
-	
+
 			$redirectmanager = new redirectmanager();
 			$redirectmanager->init();
 			$redirectmanager->checkAndDoRedirect();
@@ -222,7 +222,7 @@ class tx_aoerealurlpath_pagepath
         }
         return 0;
     }
-    
+
     /**
      * returns true/false if the current context is within a crawler call (procInstr. tx_cachemgm_recache)
      * This is used for some logging. The status is cached for performance reasons
@@ -238,7 +238,7 @@ class tx_aoerealurlpath_pagepath
 		else {
 		    return false;
 		}
-					
+
     }
 }
 ?>

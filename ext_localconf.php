@@ -19,7 +19,7 @@ $GLOBALS ['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['pro
 //hook to force regeneration if crawler is active:
 if (TYPO3_MODE=='FE')	{
 	$TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['insertPageIncache']['aoerealurlpath'] = 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_crawlerhook.php:tx_aoerealurlpath_crawlerhook';
-	
+
 	//$TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['headerNoCache']['aoerealurlpath'] = 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_crawlerhook.php:tx_aoerealurlpath_crawlerhook->fe_linkRegeneration';
 }
 

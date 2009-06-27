@@ -68,16 +68,24 @@ class tx_aoerealurlpath_pathgenerator
         $firstPage = $rootline[0];
         $rootPid = $firstPage['uid'];
         $lastPage = $rootline[count($rootline) - 1];
+
+        $pathString = '';
         $overridePath = $this->_stripSlashes($lastPage['tx_aoerealurlpath_overridepath']);
         if ($overridePath) {
-            $pathString = $overridePath;
-        } elseif ($this->_getDelegationFieldname($lastPage['doktype'])) {
-            $pathString = $this->_getDelegationTarget($lastPage);
-			if(!preg_match('/^[a-z]+:\/\//',$pathString)) $pathString = 'http://'.$pathString;
-        } else {
-            $pathString = $this->_buildPath($this->conf['segTitleFieldList'], $rootline);
+        	$parts = explode('/',$overridePath);
+        	$cleanParts = array_map( array($this, 'encodeTitle'), $parts);
+        	$nonEmptyParts = array_filter($cleanParts);
+            $pathString = implode('/', $nonEmptyParts );
         }
-        //$pathString='http://www.aoemedia.de';
+        if(!$pathString) {
+	        if ($this->_getDelegationFieldname($lastPage['doktype'])) {
+	            $pathString = $this->_getDelegationTarget($lastPage);
+				if(!preg_match('/^[a-z]+:\/\//',$pathString)) $pathString = 'http://'.$pathString;
+	        } else {
+	            $pathString = $this->_buildPath($this->conf['segTitleFieldList'], $rootline);
+	        }
+        }
+
         return array('path' => $pathString , 'rootPid' => $rootPid);
     }
     function _stripSlashes ($str_org)
@@ -192,9 +200,7 @@ class tx_aoerealurlpath_pathgenerator
      **/
     function _isBELogin ()
     {
-        if (! is_object($GLOBALS['BE_USER']))
-            return false; else
-            return true;
+    	return is_object($GLOBALS['BE_USER']);
     }
     /**
      * builds the path based on the rootline
