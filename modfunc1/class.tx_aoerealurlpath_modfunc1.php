@@ -40,7 +40,16 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
     function modMenu ()
     {
         global $LANG;
-        $menuArray = array('depth' => array(0 => $LANG->getLL('depth_0') , 1 => $LANG->getLL('depth_1') , 2 => $LANG->getLL('depth_2') , 3 => $LANG->getLL('depth_3')));
+        $menuArray = array(
+					'depth' => array(
+						0 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_0'),
+						1 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_1'),
+						2 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_2'),
+						3 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_3'),
+						4 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_4'),
+						99 => $LANG->sL('LLL:EXT:lang/locallang_core.php:labels.depth_infi'),
+					)
+				);
         return $menuArray;
     }
     /**
