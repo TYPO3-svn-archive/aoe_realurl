@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2007 Kasper Ligaard (ligaard@daimi.au.dk)
+ *  (c) 2008 AOE media GmbH
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -125,7 +125,7 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_testcase
         $cache->setCacheTimeOut(1);
         $this->assertFalse($cache->_isCacheRowStillValid(array('dirty'=>'1'),FALSE),'should return false');
         $this->assertFalse($cache->_isCacheRowStillValid(array('tstamp'=>(time()-2)),FALSE),'should return false');
-    }    
+    }
  	public function test_canStoreAndGetFromHistory()
     {
         $cache = new tx_aoerealurlpath_cachemgmt(0, 0);
@@ -133,13 +133,13 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_testcase
         $cache->setCacheTimeOut(1);
         $cache->setRootPid(1);
         $cache->storeUniqueInCache('9990', 'sample/path1');
-       
+
         $dummy = array();
         $pidOrFalse = $cache->checkCacheWithDecreasingPath(array('sample' , 'path1'), $dummy);
         $this->assertEquals($pidOrFalse, '9990', '9990 should be fould for path');
-        
+
         sleep(2);
-        
+
         $dummy = array();
         $pidOrFalse = $cache->checkCacheWithDecreasingPath(array('sample' , 'path1'), $dummy);
         $this->assertEquals($cache->isInCache(9990), FALSE, 'cache should be expired');
@@ -149,10 +149,10 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_testcase
         $pidOrFalse = $cache->checkCacheWithDecreasingPath(array('sample' , 'path1new'), $dummy);
         $this->assertEquals($pidOrFalse, '9990', ' 9990 should be the path');
         //now check history
-        
+
         $pidOrFalse = $cache->checkHistoryCacheWithDecreasingPath(array('sample' , 'path1'), $dummy);
         $this->assertEquals($pidOrFalse, '9990', ' 9990 should be the pid in history');
-        
+
     }
 }
 ?>

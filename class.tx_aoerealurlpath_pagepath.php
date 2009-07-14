@@ -45,7 +45,8 @@ class tx_aoerealurlpath_pagepath
 {
     var $generator; //help object for generating paths
     var $insert = false;
-
+    var $pObj;
+    var $conf;
 
 	/** Main function -> is called from real_url
      * parameters and results are in $params (some by reference)
@@ -56,12 +57,10 @@ class tx_aoerealurlpath_pagepath
      */
     function main ($params, $ref)
     {
-
-
         // Setting internal variables:
         //debug($params);
-        $this->pObj = &$ref;
-        $this->conf = $params['conf'];
+        $this->_setParent($ref);
+        $this->_setConf($params['conf']);
         srand(); //init rand for cache
         $this->generator = t3lib_div::makeInstance('tx_aoerealurlpath_pathgenerator');
         $this->generator->init($this->conf);
@@ -175,24 +174,28 @@ class tx_aoerealurlpath_pagepath
     }
     /**
      * Gets the value of current language
+     * first it tries to recieve it from the get-parameters directly
      *
      * @return	integer		Current language or 0
      */
     function _getLanguageVar ()
     {
-        $lang = 0;
+        $lang = FALSE;
+        $getVarName = $this->conf['languageGetVar']?$this->conf['languageGetVar']:'L';
+
         // Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
-        if ($this->conf['languageGetVar']) {
-            $lang = intval($this->pObj->orig_paramKeyValues[$this->conf['languageGetVar']]);
+        if ($getVarName && array_key_exists($getVarName,$this->pObj->orig_paramKeyValues)) {
+            $lang = intval($this->pObj->orig_paramKeyValues[$getVarName]);
             // Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
             if (t3lib_div::inList($this->conf['languageExceptionUids'], $lang)) {
                 $lang = 0;
             }
         }
-        if ($lang == 0) {
-            $lang = intval(t3lib_div::_GP('L'));
+        if ($lang === FALSE) {
+        	//TODO next line is not covered by a test
+            $lang = intval(t3lib_div::_GP($getVarName));
             if ($lang == 0) {
-                $lang = intval($this->pObj->getRetrievedPreGetVar('L'));
+                $lang = intval($this->pObj->getRetrievedPreGetVar($getVarName));
             }
         }
         return $lang;
@@ -238,7 +241,27 @@ class tx_aoerealurlpath_pagepath
 		else {
 		    return false;
 		}
+    }
 
+    /**
+     * assigns the configuration
+     *
+     * @param $conf
+     * @return void
+     */
+    function _setConf($conf) {
+    	//TODO: validate the incoming conf
+        $this->conf = $conf;
+    }
+
+    /**
+     * assigns the parent object
+     *
+     * @param tx_realurl    $ref: the parent object
+     * @return void
+     */
+    function _setParent($ref) {
+    	$this->pObj = &$ref;
     }
 }
 ?>
