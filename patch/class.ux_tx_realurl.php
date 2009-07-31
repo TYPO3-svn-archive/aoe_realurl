@@ -183,6 +183,18 @@ class ux_tx_realurl extends tx_realurl
         $cachedInfo = array();
         // Split URL + resolve parts of path:
         $pathParts = explode('/', $speakingURIpath);
+
+//clear former replaced empty values
+                if ($this->extConf['init']['postReplaceEmptyValues'] == 1) {
+                        $emptyPathSegmentReplaceValue = ($this->extConf['init']['emptyValuesReplacer'])?$this->extConf['init']['emptyValuesReplacer']:$this->emptyReplacerDefaultValue;
+                        foreach ($pathParts as $k=>$v) {
+                                if ($v == $emptyPathSegmentReplaceValue) {
+                                        $pathParts[$k] = '';
+                                }
+                        }
+                }
+
+
         $this->filePart = array_pop($pathParts);
         // Checking default HTML name:
         if (strlen($this->filePart) && ($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] || $this->extConf['fileName']['acceptHTMLsuffix']) && ! isset($this->extConf['fileName']['index'][$this->filePart])) {
