@@ -200,7 +200,7 @@ class tx_aoerealurlpath_pathgenerator
         $rootLine = $this->sys_page->getRootLine($pid, $mpvar);
 	//only return rootline to the given rootpid
 	$rootPidFound=FALSE;
-	while (!$rootPidFound || count($rootLine)==0) {
+	while (!$rootPidFound &&  count($rootLine)>0) {
 		$last=array_pop($rootLine);
 		if ($last['uid'] == $this->rootPid) {
 			$rootPidFound=TRUE;
@@ -209,7 +209,8 @@ class tx_aoerealurlpath_pathgenerator
 		}
 	}
 	if (!$rootPidFound) {
-		throw new Exception('The rootpid '.$this->rootPid.'.configured for pagepath generation was not found in the rootline for page'.$pid);
+		
+//	throw new Exception('The rootpid '.$this->rootPid.'.configured for pagepath generation was not found in the rootline for page'.$pid);
 	}
 
 	$siteRootLine=array();
