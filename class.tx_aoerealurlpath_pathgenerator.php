@@ -184,6 +184,12 @@ class tx_aoerealurlpath_pathgenerator
 		}
     }
     /**
+    * set the rootpid that is used for generating the path. (used to stop rootline on that pid)
+    */
+    public function setRootPid($id) {
+	$this->rootPid=$id;
+    }
+    /**
      * @param $pid Pageid of the page where the rootline should be retrieved
      * @return array with rootline for pid
      **/
@@ -192,7 +198,27 @@ class tx_aoerealurlpath_pathgenerator
         // Get rootLine for current site (overlaid with any language overlay records).
         $this->_initSysPage($langID, $wsId);
         $rootLine = $this->sys_page->getRootLine($pid, $mpvar);
-        return $rootLine;
+	//only return rootline to the given rootpid
+	$rootPidFound=FALSE;
+	while (!$rootPidFound || count($rootLine)==0) {
+		$last=array_pop($rootLine);
+		if ($last['uid'] == $this->rootPid) {
+			$rootPidFound=TRUE;
+			$rootLine[]=$last;
+			break;
+		}
+	}
+	if (!$rootPidFound) {
+		throw new Exception('The rootpid '.$this->rootPid.'.configured for pagepath generation was not found in the rootline for page'.$pid);
+	}
+
+	$siteRootLine=array();
+	$c = count($rootLine);
+	foreach ($rootLine as $val) {	
+		$c--;
+		$siteRootLine[$c] = $val;
+	}
+	return $siteRootLine;
     }
     /**
      * checks if the user is logged in backend

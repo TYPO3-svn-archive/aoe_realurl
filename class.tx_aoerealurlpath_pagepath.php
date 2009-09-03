@@ -64,7 +64,9 @@ class tx_aoerealurlpath_pagepath
         srand(); //init rand for cache
         $this->generator = t3lib_div::makeInstance('tx_aoerealurlpath_pathgenerator');
         $this->generator->init($this->conf);
-        $cachemgmtClassName = t3lib_div::makeInstanceClassName('tx_aoerealurlpath_cachemgmt');
+        $this->generator->setRootPid($this->_getRootPid());
+
+	$cachemgmtClassName = t3lib_div::makeInstanceClassName('tx_aoerealurlpath_cachemgmt');
         #debug($this->_getLanguageVar());
         $this->cachemgmt = new $cachemgmtClassName($this->_getWorkspaceId(), $this->_getLanguageVar());
         $this->cachemgmt->setCacheTimeout($this->conf['cacheTimeOut']);
