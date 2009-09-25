@@ -51,20 +51,24 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 		//create relevant tables:
 		$extList = array('cms','realurl','aoe_realurlpath');
 		$extOptList = array('templavoila','languagevisibility','aoe_webex_tableextensions','aoe_localizeshortcut');
-        foreach($extOptList as $ext) {
-            if(t3lib_extMgm::isLoaded($ext)) {
-                $extList[] = $ext;
-            }
-        }
-        $this->importExtensions($extList);
+        	foreach($extOptList as $ext) {
+            		if(t3lib_extMgm::isLoaded($ext)) {
+                		$extList[] = $ext;
+            		}
+        	}
+        	$this->importExtensions($extList);
 
 		$this->importDataSet(dirname(__FILE__). '/fixtures/page-livews.xml');
 		$this->importDataSet(dirname(__FILE__). '/fixtures/overlay-livews.xml');
 		$this->importDataSet(dirname(__FILE__). '/fixtures/page-ws.xml');
 		$this->importDataSet(dirname(__FILE__). '/fixtures/overlay-ws.xml');
 
-        $this->pathgenerator = new tx_aoerealurlpath_pathgenerator();
-        $this->pathgenerator->init($this->fixture_defaultconfig());
+        	$this->pathgenerator = new tx_aoerealurlpath_pathgenerator();
+        	$this->pathgenerator->init($this->fixture_defaultconfig());
+		$this->pathgenerator->setRootPid(1);
+		if (!is_object($GLOBALS['TSFE']->csConvObj)) {
+			$GLOBALS['TSFE']->csConvObj=t3lib_div::makeInstance('t3lib_cs');
+		}
 	}
 
     public function tearDown() {
@@ -98,7 +102,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         $this->assertEquals($result['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (last page should have default name)');
     }
 
-    public function test_canBuildPathsWithExcludeFromMiddle()
+    public function test_canBuildPathsWithExcludeAndOverride()
     {
         // page root->excludefrommiddle->subpage(with pathsegment)
         $result = $this->pathgenerator->build(85, 0, 0);
@@ -107,15 +111,21 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         // page root->excludefrommiddle->subpage(with pathsegment)
         $result = $this->pathgenerator->build(87, 0, 0);
         $this->assertEquals($result['path'], 'subpagepathsegment/sub-subpage', 'wrong path build: should be subpagepathsegment/sub-subpage');
-    }
 
-    public function test_canBuildPathsWithOverridePathSetting()
-    {
         $result = $this->pathgenerator->build(80, 0, 0);
         $this->assertEquals($result['path'], 'override/path/item', 'wrong path build: should be override/path/item');
 
         $result = $this->pathgenerator->build(81, 0, 0);
         $this->assertEquals($result['path'], 'specialpath/withspecial/chars', 'wrong path build: should be specialpath/withspecial/chars');
+
+	// instead of shortcut page the shortcut target should be used within path
+        $result = $this->pathgenerator->build(92, 0, 0);
+        $this->assertEquals($result['path'], 'normal-3rd-level/subsection', 'wrong path build: shortcut from uid92 to uid91 should be resolved');
+
+        // shortcuts with a reference to themselfs might be a problem
+        $result = $this->pathgenerator->build(95, 0, 0);
+        $this->assertEquals($result['path'], 'shortcut-page', 'wrong path build: shortcut shouldn\'t be resolved');
+
     }
 
     public function test_invalidOverridePathWillFallBackToDefaultGeneration()
@@ -162,15 +172,6 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
         $this->assertEquals($result['path'], 'subpage-ws-de', 'wrong path build: should be own/url/for/austria/in/ws');
     }
 
-    public function test_canBuildShortcutPaths() {
-        // instead of shortcut page the shortcut target should be used within path
-        $result = $this->pathgenerator->build(92, 0, 0);
-        $this->assertEquals($result['path'], 'normal-3rd-level/subsection', 'wrong path build: shortcut from uid92 to uid91 should be resolved');
-
-        // shortcuts with a reference to themselfs might be a problem
-        $result = $this->pathgenerator->build(95, 0, 0);
-        $this->assertEquals($result['path'], 'shortcut-page', 'wrong path build: shortcut shouldn\'t be resolved');
-    }
 
     public function test_canBuildPathIfOverlayUsesNonLatinChars() {
 
@@ -212,12 +213,18 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 
     public function fixture_defaultconfig ()
     {
-        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 'rootpage_id' => '1' , 'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle');
+        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 
+		'rootpage_id' => '1' , 
+		'strictMode'=>1,
+		'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle');
         return $conf;
     }
     public function fixture_delegationconfig ()
     {
-        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 'rootpage_id' => '1' , 'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle', 'delegation'=>array( 77 => 'url' ) );
+        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 
+		'rootpage_id' => '1' ,
+		'strictMode'=>1, 
+		'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle', 'delegation'=>array( 77 => 'url' ) );
         return $conf;
     }
 
