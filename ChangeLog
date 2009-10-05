@@ -1,3 +1,7 @@
+5.10.2009
+	* the rootline is stopped at the defined rootpid
+ 	* bug in _getLanguage method resolved
+
 (add new changes on top of this file)
 
 07-12-02   <>

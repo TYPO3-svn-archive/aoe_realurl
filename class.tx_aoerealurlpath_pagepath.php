@@ -176,7 +176,16 @@ class tx_aoerealurlpath_pagepath
     }
     /**
      * Gets the value of current language
+     * What needs to happen:
+     *   decode: -the languageid is used by cachemgmt in order to retrieve the correct pid for the given path
+     *           -that means it needs to return the languageid of the current context:
+     *				(means the L parameter value after realurl processing)
+     *
+     *   encode: - the langugeid is used to build the path + to cache the path
+     *            - if in the url parameters it is forced to generate the url in a specific language it needs to use this (L parameter defined in typolink)
+     *            -  
      * first it tries to recieve it from the get-parameters directly
+     *  - orig_paramKeyValues is set by realurl during encoding, and it has the L paremeter value that is passed to typolink
      *
      * @return	integer		Current language or 0
      */
