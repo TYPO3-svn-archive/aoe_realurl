@@ -26,7 +26,7 @@
  *
  * WARNING: Never ever run a unit test like this on a live site!
  * *
- * @author  Daniel Pötzinger
+ * @author  Daniel PÃ¶tzinger
  * @author  Tolleiv Nietsch
  */
 
@@ -42,13 +42,19 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
      * @var tx_aoerealurlpath_pathgenerator
      */
 	private $pathgenerator;
+	private $rootlineFields;
 
 	public function setUp() {
 		$GLOBALS['TYPO3_DB']->debugOutput = true;
 		$this->createDatabase();
 		$db = $this->useTestDatabase();
 		$this->importStdDB();
-		//create relevant tables:
+
+			// make sure addRootlineFields has the right content - otherwise we experience DB-errors within testdb
+		$this->rootlineFields = $GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'];
+		$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] = 'tx_aoerealurlpath_overridesegment,tx_aoerealurlpath_overridepath,tx_aoerealurlpath_excludefrommiddle';
+
+			//create relevant tables:
 		$extList = array('cms','realurl','aoe_realurlpath');
 		$extOptList = array('templavoila','languagevisibility','aoe_webex_tableextensions','aoe_localizeshortcut');
         	foreach($extOptList as $ext) {
@@ -75,6 +81,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 		$this->cleanDatabase();
    		$this->dropDatabase();
 		$GLOBALS['TYPO3_DB']->sql_select_db(TYPO3_db);
+		$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] = $this->rootlineFields;
     }
 
 	public function test_canGetCorrectRootline ()
@@ -213,17 +220,17 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 
     public function fixture_defaultconfig ()
     {
-        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 
-		'rootpage_id' => '1' , 
+        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' ,
+		'rootpage_id' => '1' ,
 		'strictMode'=>1,
 		'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle');
         return $conf;
     }
     public function fixture_delegationconfig ()
     {
-        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' , 
+        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' ,
 		'rootpage_id' => '1' ,
-		'strictMode'=>1, 
+		'strictMode'=>1,
 		'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle', 'delegation'=>array( 77 => 'url' ) );
         return $conf;
     }
