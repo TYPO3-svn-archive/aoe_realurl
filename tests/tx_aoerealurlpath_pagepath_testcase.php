@@ -30,125 +30,117 @@
  * @author	Tolleiv Nietsch
  */
 
-require_once (t3lib_extMgm::extPath("realurl") . 'class.tx_realurl.php');
-require_once (t3lib_extMgm::extPath("aoe_realurlpath") . 'class.tx_aoerealurlpath_pagepath.php');
+require_once (t3lib_extMgm::extPath ( "realurl" ) . 'class.tx_realurl.php');
+require_once (t3lib_extMgm::extPath ( "aoe_realurlpath" ) . 'class.tx_aoerealurlpath_pagepath.php');
 
-class tx_aoerealurlpath_pagepath_testcase extends tx_phpunit_testcase
-{
+class tx_aoerealurlpath_pagepath_testcase extends tx_phpunit_testcase {
 
-    /**
-     * just test that 0 is returned even if nothing is submitted and realurl returns non-int
-     *
-     * @test
-     * @return void
-     */
-    public function defaultLanguageIs0() {
-        $mock = $this->getMock('tx_realurl',array('getRetrievedPreGetVar'));
-        $mock->expects($this->any())
-             ->method('getRetrievedPreGetVar')
-             ->will($this->returnValue(false));
+	/**
+	 * just test that 0 is returned even if nothing is submitted and realurl returns non-int
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function defaultLanguageIs0() {
+		$mock = $this->getMock ( 'tx_realurl', array ('getRetrievedPreGetVar' ) );
+		$mock->expects ( $this->any () )->method ( 'getRetrievedPreGetVar' )->will ( $this->returnValue ( false ) );
 
-        $pp = new tx_aoerealurlpath_pagepath();
-        $pp->_setConf(array());
-        $pp->_setParent($mock);
+		$pp = new tx_aoerealurlpath_pagepath ( );
+		$pp->_setConf ( array () );
+		$pp->_setParent ( $mock );
 
-        $this->assertEquals(true, 0===$pp->_getLanguageVar(), 'Wrong default language');
+		$this->assertEquals ( true, 0 === $pp->_getLanguageVar (), 'Wrong default language' );
 
-    }
-    /**
-     *
-     * @test
-     * @return void
-     */
-    public function basicLanguageDetectionWorks() {
-        $mock = $this->getMock('tx_realurl',array());
-        $mock->orig_paramKeyValues['L'] = 3;
+	}
 
-        $pp = new tx_aoerealurlpath_pagepath();
-        $pp->_setConf(array('languageGetVar'=>'L'));
-        $pp->_setParent($mock);
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function basicLanguageDetectionWorks() {
+		$mock = $this->getMock ( 'tx_realurl', array () );
+		$mock->orig_paramKeyValues ['L'] = 3;
 
-        $this->assertEquals(3, $pp->_getLanguageVar(), 'Wrong language detected');
+		$pp = new tx_aoerealurlpath_pagepath ( );
+		$pp->_setConf ( array ('languageGetVar' => 'L' ) );
+		$pp->_setParent ( $mock );
 
-    }
-    /**
-     *
-     * @test
-     * @return void
-     */
-    public function abbrevLisTheDefaultAbbreviation() {
-        $mock = $this->getMock('tx_realurl',array());
-        $mock->orig_paramKeyValues['L'] = 3;
+		$this->assertEquals ( 3, $pp->_getLanguageVar (), 'Wrong language detected' );
 
-        $pp = new tx_aoerealurlpath_pagepath();
-        $pp->_setConf(array());
-        $pp->_setParent($mock);
+	}
 
-        $this->assertEquals(3, $pp->_getLanguageVar(), 'it seems that L is not used as default-parameter for the language detection');
+	/**
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function abbrevLisTheDefaultAbbreviation() {
+		$mock = $this->getMock ( 'tx_realurl', array () );
+		$mock->orig_paramKeyValues ['L'] = 3;
 
-    }
+		$pp = new tx_aoerealurlpath_pagepath ( );
+		$pp->_setConf ( array () );
+		$pp->_setParent ( $mock );
 
+		$this->assertEquals ( 3, $pp->_getLanguageVar (), 'it seems that L is not used as default-parameter for the language detection' );
 
-    /**
-     * makes sure that there's no fixed dependency to the "L" anymore
-     *
-     * @test
-     * @return void
-     */
-    public function languageAbbrevCanBeChanged() {
-        $mock = $this->getMock('tx_realurl',array());
-        $mock->orig_paramKeyValues['L'] = 3;
-        $mock->orig_paramKeyValues['newL'] = 10;
+	}
 
-        $pp = new tx_aoerealurlpath_pagepath();
-        $pp->_setConf(array('languageGetVar'=>'newL'));
-        $pp->_setParent($mock);
+	/**
+	 * makes sure that there's no fixed dependency to the "L" anymore
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function languageAbbrevCanBeChanged() {
+		$mock = $this->getMock ( 'tx_realurl', array () );
+		$mock->orig_paramKeyValues ['L'] = 3;
+		$mock->orig_paramKeyValues ['newL'] = 10;
 
-        $this->assertEquals(10, $pp->_getLanguageVar(), 'seems that we\'re using the wrong GET var to read the language');
+		$pp = new tx_aoerealurlpath_pagepath ( );
+		$pp->_setConf ( array ('languageGetVar' => 'newL' ) );
+		$pp->_setParent ( $mock );
 
-    }
+		$this->assertEquals ( 10, $pp->_getLanguageVar (), 'seems that we\'re using the wrong GET var to read the language' );
 
+	}
 
-    /**
-     * makes sure that the exception (blacklist) work
-     *
-     * @test
-     * @return void
-     */
-    public function languageExceptionsWork() {
-        $mock = $this->getMock('tx_realurl',array());
-        $mock->orig_paramKeyValues['L'] = 3;
+	/**
+	 * makes sure that the exception (blacklist) work
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function languageExceptionsWork() {
+		$mock = $this->getMock ( 'tx_realurl', array () );
+		$mock->orig_paramKeyValues ['L'] = 3;
 
-        $pp = new tx_aoerealurlpath_pagepath();
-        $pp->_setConf(array('languageExceptionUids'=>'2'));
-        $pp->_setParent($mock);
+		$pp = new tx_aoerealurlpath_pagepath ( );
+		$pp->_setConf ( array ('languageExceptionUids' => '2' ) );
+		$pp->_setParent ( $mock );
 
-        $this->assertEquals(3, $pp->_getLanguageVar(), 'it seems that a regular request was filtered with the blacklist');
-        $mock->orig_paramKeyValues['L'] = 2;
-        $this->assertEquals(0, $pp->_getLanguageVar(), 'it seems that a excepted / blacklisted language wasn\'t filtered');
+		$this->assertEquals ( 3, $pp->_getLanguageVar (), 'it seems that a regular request was filtered with the blacklist' );
+		$mock->orig_paramKeyValues ['L'] = 2;
+		$this->assertEquals ( 0, $pp->_getLanguageVar (), 'it seems that a excepted / blacklisted language wasn\'t filtered' );
 
-    }
+	}
 
+	/**
+	 * makes sure that the realurl-pre-settings are used if there's no other input
+	 *
+	 * @test
+	 * @return void
+	 */
+	public function languageIsDetectedFromPreVar() {
+		$mock = $this->getMock ( 'tx_realurl', array ('getRetrievedPreGetVar' ) );
+		$mock->expects ( $this->any () )->method ( 'getRetrievedPreGetVar' )->will ( $this->returnValue ( 7 ) );
 
-    /**
-     * makes sure that the realurl-pre-settings are used if there's no other input
-     *
-     * @test
-     * @return void
-     */
-    public function languageIsDetectedFromPreVar() {
-        $mock = $this->getMock('tx_realurl',array('getRetrievedPreGetVar'));
-        $mock->expects($this->any())
-             ->method('getRetrievedPreGetVar')
-             ->will($this->returnValue(7));
+		$pp = new tx_aoerealurlpath_pagepath ( );
+		$pp->_setConf ( array () );
+		$pp->_setParent ( $mock );
 
-
-        $pp = new tx_aoerealurlpath_pagepath();
-        $pp->_setConf(array());
-        $pp->_setParent($mock);
-
-        $this->assertEquals(7, $pp->_getLanguageVar(), 'pregetvar isn\'t used as supposed');
-    }
-
+		$this->assertEquals ( 7, $pp->_getLanguageVar (), 'pregetvar isn\'t used as supposed' );
+	}
 }
 ?>
