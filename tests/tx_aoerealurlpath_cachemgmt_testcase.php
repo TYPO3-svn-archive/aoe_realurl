@@ -34,7 +34,39 @@ require_once (t3lib_extMgm::extPath ( "aoe_realurlpath" ) . 'class.tx_aoerealurl
 // require_once (t3lib_extMgm::extPath('phpunit').'class.tx_phpunit_test.php');
 require_once (PATH_t3lib . 'class.t3lib_tcemain.php');
 
-class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_testcase {
+class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase {
+
+	public function setUp() {
+		$GLOBALS['TYPO3_DB']->debugOutput = true;
+		$this->createDatabase();
+		$db = $this->useTestDatabase();
+		$this->importStdDB();
+
+			// make sure addRootlineFields has the right content - otherwise we experience DB-errors within testdb
+		$this->rootlineFields = $GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'];
+		$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] = 'tx_aoerealurlpath_overridesegment,tx_aoerealurlpath_overridepath,tx_aoerealurlpath_excludefrommiddle';
+
+			//create relevant tables:
+		$extList = array('cms','realurl','aoe_realurlpath');
+		$extOptList = array('templavoila','languagevisibility','aoe_webex_tableextensions','aoe_localizeshortcut');
+		foreach($extOptList as $ext) {
+			if(t3lib_extMgm::isLoaded($ext)) {
+				$extList[] = $ext;
+			}
+		}
+		$this->importExtensions($extList);
+
+		if (!is_object($GLOBALS['TSFE']->csConvObj)) {
+			$GLOBALS['TSFE']->csConvObj=t3lib_div::makeInstance('t3lib_cs');
+		}
+	}
+
+	public function tearDown() {
+		$this->cleanDatabase();
+		$this->dropDatabase();
+		$GLOBALS['TYPO3_DB']->sql_select_db(TYPO3_db);
+		$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] = $this->rootlineFields;
+	}
 
 	/**
 	 * Basic cache storage / retrieval works as supposed
