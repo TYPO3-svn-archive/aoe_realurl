@@ -89,7 +89,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 	 *
 	 * @test
 	 */
-	public function test_canGetCorrectRootline() {
+	public function canGetCorrectRootline() {
 		$result = $this->pathgenerator->_getRootline ( 87, 0, 0 );
 		$count = count ( $result );
 		$first = $result [0];
@@ -103,7 +103,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 	 *
 	 * @test
 	 */
-	public function test_canBuildStandardPaths() {
+	public function canBuildStandardPaths() {
 			// 1) Rootpage
 		$result = $this->pathgenerator->build ( 1, 0, 0 );
 		$this->assertEquals ( $result ['path'], '', 'wrong path build: root should be empty' );
@@ -163,7 +163,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 	 *
 	 * @test
 	 */
-	public function test_canBuildPathsWithLanguageOverlay() {
+	public function canBuildPathsWithLanguageOverlay() {
 
 			// page root->excludefrommiddle->languagemix (austria)
 		$result = $this->pathgenerator->build ( 86, 2, 0 );
@@ -258,6 +258,22 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 		$result = $this->pathgenerator->build ( 99, 0, 0 );
 		$this->assertEquals ( $result ['path'], 'http://www.aoemedia.de', 'wrong path build: deligation should be executed' );
 
+	}
+
+	/**
+	 * Retrieval works for path being a delegation target
+	 *
+	 * @test
+	 * @expectedException Exception
+	 */
+	public function canNotBuildPathForPageInForeignRooline() {
+
+		$this->pathgenerator->init ( $this->fixture_defaultconfig () );
+
+			// Test direct delegation
+		$result = $this->pathgenerator->build ( 200, 0, 0 );
+
+		$this->assertTrue(false);
 	}
 
 	/**
