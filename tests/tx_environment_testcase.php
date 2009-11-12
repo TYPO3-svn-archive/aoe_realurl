@@ -31,10 +31,10 @@ class tx_environment_testcase extends tx_phpunit_testcase {
 	 * @return void
 	 */
 	public function pageOverlayFieldExists() {
-		$list = t3lib_div::trimExplode(",",$GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields']);
-		$this->assertEquals(true,in_array('tx_aoerealurlpath_overridesegment',$list),'tx_aoerealurlpath_overridesegment missing in $GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'pageOverlayFields\']');
-		$this->assertEquals(true,in_array('tx_aoerealurlpath_overridepath',$list),'tx_aoerealurlpath_overridepath missing in $GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'pageOverlayFields\']');
-		$this->assertEquals(true,in_array('tx_aoerealurlpath_excludefrommiddle',$list),'tx_aoerealurlpath_excludefrommiddle missing in $GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'pageOverlayFields\']');
+		$list = t3lib_div::trimExplode ( ",", $GLOBALS ['TYPO3_CONF_VARS'] ['FE'] ['pageOverlayFields'] );
+		$this->assertEquals ( true, in_array ( 'tx_aoerealurlpath_overridesegment', $list ), 'tx_aoerealurlpath_overridesegment missing in $GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'pageOverlayFields\']' );
+		$this->assertEquals ( true, in_array ( 'tx_aoerealurlpath_overridepath', $list ), 'tx_aoerealurlpath_overridepath missing in $GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'pageOverlayFields\']' );
+		$this->assertEquals ( true, in_array ( 'tx_aoerealurlpath_excludefrommiddle', $list ), 'tx_aoerealurlpath_excludefrommiddle missing in $GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'pageOverlayFields\']' );
 	}
 	/**
 	 * Just to have some confidence about the system settings ;)
@@ -43,10 +43,10 @@ class tx_environment_testcase extends tx_phpunit_testcase {
 	 * @return void
 	 */
 	public function rootlineFieldExists() {
-		$list = t3lib_div::trimExplode(",",$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields']);
-		$this->assertEquals(true,in_array('tx_aoerealurlpath_overridesegment',$list),'tx_aoerealurlpath_overridesegment missing in ,$GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'addRootLineFields\']');
-		$this->assertEquals(true,in_array('tx_aoerealurlpath_overridepath',$list),'tx_aoerealurlpath_overridepath missing in ,$GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'addRootLineFields\']');
-		$this->assertEquals(true,in_array('tx_aoerealurlpath_excludefrommiddle',$list),'tx_aoerealurlpath_excludefrommiddle missing in ,$GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'addRootLineFields\']');
+		$list = t3lib_div::trimExplode ( ",", $GLOBALS ['TYPO3_CONF_VARS'] ['FE'] ['addRootLineFields'] );
+		$this->assertEquals ( true, in_array ( 'tx_aoerealurlpath_overridesegment', $list ), 'tx_aoerealurlpath_overridesegment missing in ,$GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'addRootLineFields\']' );
+		$this->assertEquals ( true, in_array ( 'tx_aoerealurlpath_overridepath', $list ), 'tx_aoerealurlpath_overridepath missing in ,$GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'addRootLineFields\']' );
+		$this->assertEquals ( true, in_array ( 'tx_aoerealurlpath_excludefrommiddle', $list ), 'tx_aoerealurlpath_excludefrommiddle missing in ,$GLOBALS[\'TYPO3_CONF_VARS\'][\'FE\'][\'addRootLineFields\']' );
 	}
 }
 ?>

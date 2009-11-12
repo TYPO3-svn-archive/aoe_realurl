@@ -154,7 +154,7 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_testcase {
 	/**
 	 * Cache-rows should be invalid whenever they're marked as dirty or expired
 	 *
-	 *@test
+	 * @test
 	 */
 	public function canDetectRowAsInvalid() {
 		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );

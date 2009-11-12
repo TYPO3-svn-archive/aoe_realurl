@@ -31,209 +31,252 @@
  */
 
 //TODO: add testdatabase xml
-require_once (t3lib_extMgm::extPath("aoe_realurlpath") . 'class.tx_aoerealurlpath_pathgenerator.php');
+require_once (t3lib_extMgm::extPath ( "aoe_realurlpath" ) . 'class.tx_aoerealurlpath_pathgenerator.php');
 // require_once (t3lib_extMgm::extPath('phpunit').'class.tx_phpunit_test.php');
 require_once (PATH_t3lib . 'class.t3lib_tcemain.php');
-class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testcase
-{
-    /**
-     * Enter description here...
-     *
-     * @var tx_aoerealurlpath_pathgenerator
-     */
+class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testcase {
+
+	/**
+	 * Enter description here...
+	 *
+	 * @var tx_aoerealurlpath_pathgenerator
+	 */
 	private $pathgenerator;
 	private $rootlineFields;
 
 	public function setUp() {
-		$GLOBALS['TYPO3_DB']->debugOutput = true;
-		$this->createDatabase();
-		$db = $this->useTestDatabase();
-		$this->importStdDB();
+		$GLOBALS ['TYPO3_DB']->debugOutput = true;
+		$this->createDatabase ();
+		$db = $this->useTestDatabase ();
+		$this->importStdDB ();
 
-			// make sure addRootlineFields has the right content - otherwise we experience DB-errors within testdb
-		$this->rootlineFields = $GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'];
-		$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] = 'tx_aoerealurlpath_overridesegment,tx_aoerealurlpath_overridepath,tx_aoerealurlpath_excludefrommiddle';
+		// make sure addRootlineFields has the right content - otherwise we experience DB-errors within testdb
+		$this->rootlineFields = $GLOBALS ['TYPO3_CONF_VARS'] ['FE'] ['addRootLineFields'];
+		$GLOBALS ['TYPO3_CONF_VARS'] ['FE'] ['addRootLineFields'] = 'tx_aoerealurlpath_overridesegment,tx_aoerealurlpath_overridepath,tx_aoerealurlpath_excludefrommiddle';
 
-			//create relevant tables:
-		$extList = array('cms','realurl','aoe_realurlpath');
-		$extOptList = array('templavoila','languagevisibility','aoe_webex_tableextensions','aoe_localizeshortcut');
-        	foreach($extOptList as $ext) {
-            		if(t3lib_extMgm::isLoaded($ext)) {
-                		$extList[] = $ext;
-            		}
-        	}
-        	$this->importExtensions($extList);
+		//create relevant tables:
+		$extList = array ('cms', 'realurl', 'aoe_realurlpath' );
+		$extOptList = array ('templavoila', 'languagevisibility', 'aoe_webex_tableextensions', 'aoe_localizeshortcut' );
+		foreach ( $extOptList as $ext ) {
+			if (t3lib_extMgm::isLoaded ( $ext )) {
+				$extList [] = $ext;
+			}
+		}
+		$this->importExtensions ( $extList );
 
-		$this->importDataSet(dirname(__FILE__). '/fixtures/page-livews.xml');
-		$this->importDataSet(dirname(__FILE__). '/fixtures/overlay-livews.xml');
-		$this->importDataSet(dirname(__FILE__). '/fixtures/page-ws.xml');
-		$this->importDataSet(dirname(__FILE__). '/fixtures/overlay-ws.xml');
+		$this->importDataSet ( dirname ( __FILE__ ) . '/fixtures/page-livews.xml' );
+		$this->importDataSet ( dirname ( __FILE__ ) . '/fixtures/overlay-livews.xml' );
+		$this->importDataSet ( dirname ( __FILE__ ) . '/fixtures/page-ws.xml' );
+		$this->importDataSet ( dirname ( __FILE__ ) . '/fixtures/overlay-ws.xml' );
 
-        	$this->pathgenerator = new tx_aoerealurlpath_pathgenerator();
-        	$this->pathgenerator->init($this->fixture_defaultconfig());
-		$this->pathgenerator->setRootPid(1);
-		if (!is_object($GLOBALS['TSFE']->csConvObj)) {
-			$GLOBALS['TSFE']->csConvObj=t3lib_div::makeInstance('t3lib_cs');
+		$this->pathgenerator = new tx_aoerealurlpath_pathgenerator ( );
+		$this->pathgenerator->init ( $this->fixture_defaultconfig () );
+		$this->pathgenerator->setRootPid ( 1 );
+		if (! is_object ( $GLOBALS ['TSFE']->csConvObj )) {
+			$GLOBALS ['TSFE']->csConvObj = t3lib_div::makeInstance ( 't3lib_cs' );
 		}
 	}
 
-    public function tearDown() {
-		$this->cleanDatabase();
-   		$this->dropDatabase();
-		$GLOBALS['TYPO3_DB']->sql_select_db(TYPO3_db);
-		$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] = $this->rootlineFields;
-    }
+	public function tearDown() {
+		$this->cleanDatabase ();
+		$this->dropDatabase ();
+		$GLOBALS ['TYPO3_DB']->sql_select_db ( TYPO3_db );
+		$GLOBALS ['TYPO3_CONF_VARS'] ['FE'] ['addRootLineFields'] = $this->rootlineFields;
+	}
 
-	public function test_canGetCorrectRootline ()
-    {
-        $result=$this->pathgenerator->_getRootline(87, 0, 0);
-        $count = count($result);
-        $first = $result[0];
-        $this->assertEquals($count, 4, 'rootline should be 3 long');
-        $this->assertTrue(isset($first['tx_aoerealurlpath_overridesegment']), 'tx_aoerealurlpath_overridesegment should be set');
-        $this->assertTrue(isset($first['tx_aoerealurlpath_excludefrommiddle']), 'tx_aoerealurlpath_excludefrommiddle should be set');
-    }
+	/**
+	 * Rootline retrieval needs to work otherwise we can't generate paths
+	 *
+	 * @test
+	 */
+	public function test_canGetCorrectRootline() {
+		$result = $this->pathgenerator->_getRootline ( 87, 0, 0 );
+		$count = count ( $result );
+		$first = $result [0];
+		$this->assertEquals ( $count, 4, 'rootline should be 3 long' );
+		$this->assertTrue ( isset ( $first ['tx_aoerealurlpath_overridesegment'] ), 'tx_aoerealurlpath_overridesegment should be set' );
+		$this->assertTrue ( isset ( $first ['tx_aoerealurlpath_excludefrommiddle'] ), 'tx_aoerealurlpath_excludefrommiddle should be set' );
+	}
 
-    public function test_canBuildStandardPaths()
-    {
-       	// 1) Rootpage
-        $result = $this->pathgenerator->build(1, 0, 0);
-        $this->assertEquals($result['path'], '', 'wrong path build: root should be empty');
+	/**
+	 * Generator works for standard paths
+	 *
+	 * @test
+	 */
+	public function test_canBuildStandardPaths() {
+			// 1) Rootpage
+		$result = $this->pathgenerator->build ( 1, 0, 0 );
+		$this->assertEquals ( $result ['path'], '', 'wrong path build: root should be empty' );
 
-        // 2) Normal Level 2 page
-        $result = $this->pathgenerator->build(83, 0, 0);
-        $this->assertEquals($result['path'], 'excludeofmiddle', 'wrong path build: should be excludeofmiddle');
+			// 2) Normal Level 2 page
+		$result = $this->pathgenerator->build ( 83, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'excludeofmiddle', 'wrong path build: should be excludeofmiddle' );
 
-        // 3) Page without title informations
-        $result = $this->pathgenerator->build(94, 0, 0);
-        $this->assertEquals($result['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (last page should have default name)');
-    }
+			// 3) Page without title informations
+		$result = $this->pathgenerator->build ( 94, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (last page should have default name)' );
+	}
 
-    public function test_canBuildPathsWithExcludeAndOverride()
-    {
-        // page root->excludefrommiddle->subpage(with pathsegment)
-        $result = $this->pathgenerator->build(85, 0, 0);
-        $this->assertEquals($result['path'], 'subpagepathsegment', 'wrong path build: should be subpage');
+	/**
+	 * Excludes and overrides work as supposed
+	 *
+	 * @test
+	 */
+	public function canBuildPathsWithExcludeAndOverride() {
 
-        // page root->excludefrommiddle->subpage(with pathsegment)
-        $result = $this->pathgenerator->build(87, 0, 0);
-        $this->assertEquals($result['path'], 'subpagepathsegment/sub-subpage', 'wrong path build: should be subpagepathsegment/sub-subpage');
+			// page root->excludefrommiddle->subpage(with pathsegment)
+		$result = $this->pathgenerator->build ( 85, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'subpagepathsegment', 'wrong path build: should be subpage' );
 
-        $result = $this->pathgenerator->build(80, 0, 0);
-        $this->assertEquals($result['path'], 'override/path/item', 'wrong path build: should be override/path/item');
+			// page root->excludefrommiddle->subpage(with pathsegment)
+		$result = $this->pathgenerator->build ( 87, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'subpagepathsegment/sub-subpage', 'wrong path build: should be subpagepathsegment/sub-subpage' );
 
-        $result = $this->pathgenerator->build(81, 0, 0);
-        $this->assertEquals($result['path'], 'specialpath/withspecial/chars', 'wrong path build: should be specialpath/withspecial/chars');
+		$result = $this->pathgenerator->build ( 80, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'override/path/item', 'wrong path build: should be override/path/item' );
 
-	// instead of shortcut page the shortcut target should be used within path
-        $result = $this->pathgenerator->build(92, 0, 0);
-        $this->assertEquals($result['path'], 'normal-3rd-level/subsection', 'wrong path build: shortcut from uid92 to uid91 should be resolved');
+		$result = $this->pathgenerator->build ( 81, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'specialpath/withspecial/chars', 'wrong path build: should be specialpath/withspecial/chars' );
 
-        // shortcuts with a reference to themselfs might be a problem
-        $result = $this->pathgenerator->build(95, 0, 0);
-        $this->assertEquals($result['path'], 'shortcut-page', 'wrong path build: shortcut shouldn\'t be resolved');
+			// instead of shortcut page the shortcut target should be used within path
+		$result = $this->pathgenerator->build ( 92, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'normal-3rd-level/subsection', 'wrong path build: shortcut from uid92 to uid91 should be resolved' );
 
-    }
+			// shortcuts with a reference to themselfs might be a problem
+		$result = $this->pathgenerator->build ( 95, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'shortcut-page', 'wrong path build: shortcut shouldn\'t be resolved' );
 
-    public function test_invalidOverridePathWillFallBackToDefaultGeneration()
-    {
-        $result = $this->pathgenerator->build(82, 0, 0);
-        $this->assertEquals($result['path'], 'invalid-overridepath', 'wrong path build: should be invalid-overridepath');
-    }
+	}
 
-	public function test_canBuildPathsWithLanguageOverlay()
-    {
-       	// page root->excludefrommiddle->languagemix (austria)
-        $result = $this->pathgenerator->build(86, 2, 0);
-        $this->assertEquals($result['path'], 'own/url/for/austria', 'wrong path build: should be own/url/for/austria');
+	/**
+	 * Overridepath is handled right even if it's invalid
+	 *
+	 * @test
+	 */
+	public function invalidOverridePathWillFallBackToDefaultGeneration() {
+		$result = $this->pathgenerator->build ( 82, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'invalid-overridepath', 'wrong path build: should be invalid-overridepath' );
+	}
 
-        // page root->excludefrommiddle->subpage(with pathsegment)
-        $result = $this->pathgenerator->build(85, 2, 0);
-        $this->assertEquals($result['path'], 'subpagepathsegment-austria', 'wrong path build: should be subpagepathsegment-austria');
+	/**
+	 * Languageoverlay is taken into account for pagepaths
+	 *
+	 * @test
+	 */
+	public function test_canBuildPathsWithLanguageOverlay() {
 
-        // page root->excludefrommiddle->subpage (overlay with exclude middle)->sub-subpage
-        $result = $this->pathgenerator->build(87, 2, 0);
-        $this->assertEquals($result['path'], 'sub-subpage-austria', 'wrong path build: should be subpagepathsegment-austria');
+			// page root->excludefrommiddle->languagemix (austria)
+		$result = $this->pathgenerator->build ( 86, 2, 0 );
+		$this->assertEquals ( $result ['path'], 'own/url/for/austria', 'wrong path build: should be own/url/for/austria' );
 
-        //for french (5)
-        $result = $this->pathgenerator->build(86, 5, 0);
-        $this->assertEquals($result['path'], 'languagemix-segment', 'wrong path build: should be languagemix-segment');
+			// page root->excludefrommiddle->subpage(with pathsegment)
+		$result = $this->pathgenerator->build ( 85, 2, 0 );
+		$this->assertEquals ( $result ['path'], 'subpagepathsegment-austria', 'wrong path build: should be subpagepathsegment-austria' );
 
-    }
-	public function test_canBuildPathsInWorkspace()
-    {
-       	// page root->excludefrommiddle->subpagepathsegment-ws
-        $result = $this->pathgenerator->build(85, 0, 1);
-        $this->assertEquals($result['path'], 'subpagepathsegment-ws', 'wrong path build: should be subpage-ws');
+			// page root->excludefrommiddle->subpage (overlay with exclude middle)->sub-subpage
+		$result = $this->pathgenerator->build ( 87, 2, 0 );
+		$this->assertEquals ( $result ['path'], 'sub-subpage-austria', 'wrong path build: should be subpagepathsegment-austria' );
 
-        // page
-        $result = $this->pathgenerator->build(86, 2, 1);
-        $this->assertEquals($result['path'], 'own/url/for/austria/in/ws', 'wrong path build: should be own/url/for/austria/in/ws');
+			//for french (5)
+		$result = $this->pathgenerator->build ( 86, 5, 0 );
+		$this->assertEquals ( $result ['path'], 'languagemix-segment', 'wrong path build: should be languagemix-segment' );
 
-        //page languagemix in deutsch (only translated in ws)
-        $result = $this->pathgenerator->build(86, 1, 1);
-        $this->assertEquals($result['path'], 'languagemix-de', 'wrong path build: should be own/url/for/austria/in/ws');
+	}
 
-        //page languagemix in deutsch (only translated in ws)
-        $result = $this->pathgenerator->build(85, 1, 1);
-        $this->assertEquals($result['path'], 'subpage-ws-de', 'wrong path build: should be own/url/for/austria/in/ws');
-    }
+	/**
+	 * Generating paths per workspace works as supposed
+	 *
+	 * @test
+	 */
+	public function canBuildPathsInWorkspace() {
 
+			// page root->excludefrommiddle->subpagepathsegment-ws
+		$result = $this->pathgenerator->build ( 85, 0, 1 );
+		$this->assertEquals ( $result ['path'], 'subpagepathsegment-ws', 'wrong path build: should be subpage-ws' );
 
-    public function test_canBuildPathIfOverlayUsesNonLatinChars() {
+			// page
+		$result = $this->pathgenerator->build ( 86, 2, 1 );
+		$this->assertEquals ( $result ['path'], 'own/url/for/austria/in/ws', 'wrong path build: should be own/url/for/austria/in/ws' );
 
-        // some non latin characters are replaced
-        $result = $this->pathgenerator->build(83, 4, 0);
-        $this->assertEquals($result['path'], 'page-exclude', 'wrong path build: should be pages-exclude');
+			//page languagemix in deutsch (only translated in ws)
+		$result = $this->pathgenerator->build ( 86, 1, 1 );
+		$this->assertEquals ( $result ['path'], 'languagemix-de', 'wrong path build: should be own/url/for/austria/in/ws' );
 
-        // overlay has no latin characters therefore the default record is used
-        $result = $this->pathgenerator->build(84, 4, 0);
-        $this->assertEquals($result['path'], 'normal-3rd-level', 'wrong path build: should be normal-3rd-level (value taken from default record)');
+			//page languagemix in deutsch (only translated in ws)
+		$result = $this->pathgenerator->build ( 85, 1, 1 );
+		$this->assertEquals ( $result ['path'], 'subpage-ws-de', 'wrong path build: should be own/url/for/austria/in/ws' );
+	}
 
-        // overlay has no latin characters therefore the default record is used
-        $result = $this->pathgenerator->build(94, 4, 0);
-        $this->assertEquals($result['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (value from default records and auto generated since non of the pages had relevant chars)');
-    }
+	/**
+	 * Non-latin characters won't break path-generator
+	 *
+	 * @test
+	 */
+	public function canBuildPathIfOverlayUsesNonLatinChars() {
 
-    public function test_canResolvePathFromDeligatedFlexibleURLField() {
+			// some non latin characters are replaced
+		$result = $this->pathgenerator->build ( 83, 4, 0 );
+		$this->assertEquals ( $result ['path'], 'page-exclude', 'wrong path build: should be pages-exclude' );
 
-        $this->pathgenerator->init($this->fixture_delegationconfig());
+			// overlay has no latin characters therefore the default record is used
+		$result = $this->pathgenerator->build ( 84, 4, 0 );
+		$this->assertEquals ( $result ['path'], 'normal-3rd-level', 'wrong path build: should be normal-3rd-level (value taken from default record)' );
 
-        // Test direct delegation
-        $result = $this->pathgenerator->build(97, 0, 0);
-        $this->assertEquals($result['path'], 'deligation-target', 'wrong path build: deligation should be executed');
+			// overlay has no latin characters therefore the default record is used
+		$result = $this->pathgenerator->build ( 94, 4, 0 );
+		$this->assertEquals ( $result ['path'], 'normal-3rd-level/page_94', 'wrong path build: should be normal-3rd-level/page_94 (value from default records and auto generated since non of the pages had relevant chars)' );
+	}
 
-        // Test multi-hop delegation
-        $result = $this->pathgenerator->build(96, 0, 0);
-        $this->assertEquals($result['path'], 'deligation-target', 'wrong path build: deligation should be executed');
+	/**
+	 * Retrieval works for path being a delegation target
+	 *
+	 * @test
+	 */
+	public function canResolvePathFromDeligatedFlexibleURLField() {
 
-    }
+		$this->pathgenerator->init ( $this->fixture_delegationconfig () );
 
-    public function test_canResolveURLFromDeligatedFlexibleURLField() {
+			// Test direct delegation
+		$result = $this->pathgenerator->build ( 97, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'deligation-target', 'wrong path build: deligation should be executed' );
 
-        $this->pathgenerator->init($this->fixture_delegationconfig());
+			// Test multi-hop delegation
+		$result = $this->pathgenerator->build ( 96, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'deligation-target', 'wrong path build: deligation should be executed' );
 
-        $result = $this->pathgenerator->build(99, 0, 0);
-        $this->assertEquals($result['path'], 'http://www.aoemedia.de', 'wrong path build: deligation should be executed');
+	}
 
-    }
+	/**
+	 * Retrieval works for URL as delegation target
+	 *
+	 * @test
+	 */
+	public function canResolveURLFromDeligatedFlexibleURLField() {
 
-    public function fixture_defaultconfig ()
-    {
-        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' ,
-		'rootpage_id' => '1' ,
-		'strictMode'=>1,
-		'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle');
-        return $conf;
-    }
-    public function fixture_delegationconfig ()
-    {
-        $conf = array('type' => 'user' , 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main' , 'spaceCharacter' => '-' , 'cacheTimeOut' => '100' , 'languageGetVar' => 'L' ,
-		'rootpage_id' => '1' ,
-		'strictMode'=>1,
-		'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle', 'delegation'=>array( 77 => 'url' ) );
-        return $conf;
-    }
+		$this->pathgenerator->init ( $this->fixture_delegationconfig () );
+
+		$result = $this->pathgenerator->build ( 99, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'http://www.aoemedia.de', 'wrong path build: deligation should be executed' );
+
+	}
+
+	/**
+	 * Basic configuration (strict mode)
+	 *
+	 */
+	public function fixture_defaultconfig() {
+		$conf = array ('type' => 'user', 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main', 'spaceCharacter' => '-', 'cacheTimeOut' => '100', 'languageGetVar' => 'L', 'rootpage_id' => '1', 'strictMode' => 1, 'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle' );
+		return $conf;
+	}
+
+	/**
+	 * Configuration with enabled delegation function for pagetype 77
+	 *
+	 */
+	public function fixture_delegationconfig() {
+		$conf = array ('type' => 'user', 'userFunc' => 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php:&tx_aoerealurlpath_pagepath->main', 'spaceCharacter' => '-', 'cacheTimeOut' => '100', 'languageGetVar' => 'L', 'rootpage_id' => '1', 'strictMode' => 1, 'segTitleFieldList' => 'alias,tx_aoerealurlpath_overridesegment,nav_title,title,subtitle', 'delegation' => array (77 => 'url' ) );
+		return $conf;
+	}
 
 	/**
 	 * Changes current database to test database
@@ -242,7 +285,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 	 * @return object
 	 */
 	protected function useTestDatabase($databaseName = null) {
-		$db = $GLOBALS['TYPO3_DB'];
+		$db = $GLOBALS ['TYPO3_DB'];
 
 		if ($databaseName) {
 			$database = $databaseName;
@@ -250,9 +293,9 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 			$database = $this->testDatabase;
 		}
 
-		if(!$db->sql_select_db($database)) {
-            die("Test Database not available");
-        }
+		if (! $db->sql_select_db ( $database )) {
+			die ( "Test Database not available" );
+		}
 
 		return $db;
 	}
