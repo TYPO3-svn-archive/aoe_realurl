@@ -33,9 +33,9 @@ CREATE TABLE tx_aoerealurlpath_cache (
 	dirty tinyint(3) DEFAULT '0' NOT NULL
 	
 	PRIMARY KEY (pageid,workspace,rootpid,languageid),
-    KEY (path(100)),
-    KEY (rootpid,path(100)),
-    KEY (workspace,languageid)
+	KEY (path(100)),
+	KEY (rootpid,path(100)),
+	KEY (workspace,languageid)
 ) ENGINE=InnoDB;
 
 #
@@ -53,7 +53,7 @@ CREATE TABLE tx_aoerealurlpath_cachehistory (
 	
 	PRIMARY KEY (uid),
 	KEY (path(100)),
-    KEY (rootpid,path(100)),
-    KEY (workspace,languageid)
+	KEY (rootpid,path(100)),
+	KEY (workspace,languageid)
 ) ENGINE=InnoDB;
 
