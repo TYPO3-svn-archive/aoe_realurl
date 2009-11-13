@@ -154,17 +154,20 @@ class tx_aoerealurlpath_cachemgmt
                 //$buildedPath.='_'.rand();
                 $buildedPath .= '_' . $pid;
             }
-            //do insert
-            $data['tstamp'] = time();
-            $data['path'] = $buildedPath;
-            $data['mpvar'] = "";
-            $data['workspace'] = $this->getWorkspaceId();
-            $data['languageid'] = $this->getLanguageId();
-            $data['rootpid'] = $this->getRootPid();
-            $data['pageid'] = $pid;
-            #echo '-'.$GLOBALS['TYPO3_DB']->INSERTquery("tx_aoerealurlpath_cache",$data);
-            if ($GLOBALS['TYPO3_DB']->exec_INSERTquery("tx_aoerealurlpath_cache", $data)) {} else {    #echo 'error';
-            }
+			
+			if ($this->cacheTimeOut > 0) {
+				//do insert
+				$data['tstamp'] = time();
+				$data['path'] = $buildedPath;
+				$data['mpvar'] = "";
+				$data['workspace'] = $this->getWorkspaceId();
+				$data['languageid'] = $this->getLanguageId();
+				$data['rootpid'] = $this->getRootPid();
+				$data['pageid'] = $pid;
+				#echo '-'.$GLOBALS['TYPO3_DB']->INSERTquery("tx_aoerealurlpath_cache",$data);
+				if ($GLOBALS['TYPO3_DB']->exec_INSERTquery("tx_aoerealurlpath_cache", $data)) {} else {    #echo 'error';
+				}
+			}
         }
         $GLOBALS['TYPO3_DB']->sql_query('COMMIT');
         return $buildedPath;
