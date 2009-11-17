@@ -29,13 +29,13 @@ CREATE TABLE tx_aoerealurlpath_cache (
 	rootpid int(11) DEFAULT '0' NOT NULL,
 	languageid int(11) DEFAULT '0' NOT NULL,	
 	pageid int(11) DEFAULT '0' NOT NULL,
-	path text DEFAULT '' NOT NULL,	
+	path text NOT NULL,	
 	dirty tinyint(3) DEFAULT '0' NOT NULL
 	
 	PRIMARY KEY (pageid,workspace,rootpid,languageid),
-	KEY (path(100)),
-	KEY (rootpid,path(100)),
-	KEY (workspace,languageid)
+	KEY `path_k`(path(100)),
+	KEY `path_branch_k` (rootpid,path(100)),
+	KEY `ws_lang_k` (workspace,languageid)
 ) ENGINE=InnoDB;
 
 #
@@ -49,11 +49,11 @@ CREATE TABLE tx_aoerealurlpath_cachehistory (
 	rootpid int(11) DEFAULT '0' NOT NULL,
 	languageid int(11) DEFAULT '0' NOT NULL,	
 	pageid int(11) DEFAULT '0' NOT NULL,
-	path text DEFAULT '' NOT NULL,	
+	path text NOT NULL,	
 	
 	PRIMARY KEY (uid),
-	KEY (path(100)),
-	KEY (rootpid,path(100)),
-	KEY (workspace,languageid)
+	KEY `path_k` (path(100)),
+	KEY `path_branch_k` (rootpid,path(100)),
+	KEY `ws_lang_k` (workspace,languageid)
 ) ENGINE=InnoDB;
 
