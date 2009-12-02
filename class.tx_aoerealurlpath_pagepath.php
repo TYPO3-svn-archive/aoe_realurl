@@ -26,7 +26,7 @@
  ***************************************************************/
 /**
  *
- * @author	Daniel P�tzinger
+ * @author	Daniel Pötzinger
  */
 /*** TODO:
 	-check if internal cache array can improve speed
@@ -37,7 +37,7 @@ include_once (t3lib_extMgm::extPath('aoe_realurlpath') . 'class.tx_aoerealurlpat
 include_once (t3lib_extMgm::extPath('aoe_realurlpath') . 'class.tx_aoerealurlpath_cachemgmt.php');
 /**
  *
- * @author	Daniel P�tzinger
+ * @author	Daniel Pötzinger
  * @package realurl
  * @subpackage aoe_realurlpath
  */
@@ -61,16 +61,11 @@ class tx_aoerealurlpath_pagepath
         //debug($params);
         $this->_setParent($ref);
         $this->_setConf($params['conf']);
+			//TODO is this needed ??
         srand(); //init rand for cache
-        $this->generator = t3lib_div::makeInstance('tx_aoerealurlpath_pathgenerator');
-        $this->generator->init($this->conf);
-        $this->generator->setRootPid($this->_getRootPid());
 
-	#$cachemgmtClassName = t3lib_div::makeInstanceClassName('tx_aoerealurlpath_cachemgmt');
-        #debug($this->_getLanguageVar());
-        $this->cachemgmt = new tx_aoerealurlpath_cachemgmt($this->_getWorkspaceId(), $this->_getLanguageVar());
-        $this->cachemgmt->setCacheTimeout($this->conf['cacheTimeOut']);
-        $this->cachemgmt->setRootPid($this->_getRootPid());
+		$this->initGenerator();
+		$this->initCacheMgm();
 
         switch ((string) $params['mode']) {
             case 'encode':
@@ -183,7 +178,7 @@ class tx_aoerealurlpath_pagepath
      *
      *   encode: - the langugeid is used to build the path + to cache the path
      *            - if in the url parameters it is forced to generate the url in a specific language it needs to use this (L parameter defined in typolink)
-     *            -  
+     *            -
      * first it tries to recieve it from the get-parameters directly
      *  - orig_paramKeyValues is set by realurl during encoding, and it has the L paremeter value that is passed to typolink
      *
@@ -274,5 +269,25 @@ class tx_aoerealurlpath_pagepath
     function _setParent($ref) {
     	$this->pObj = &$ref;
     }
+
+	/**
+	 * Initialize the pathgenerator
+	 *
+	 */
+	function initGenerator() {
+		$this->generator = t3lib_div::makeInstance('tx_aoerealurlpath_pathgenerator');
+		$this->generator->init($this->conf);
+		$this->generator->setRootPid($this->_getRootPid());
+	}
+
+	/**
+	 * Initialize the Cache-Layer
+	 *
+	 */
+	function initCacheMgm() {
+		$this->cachemgmt = new tx_aoerealurlpath_cachemgmt($this->_getWorkspaceId(), $this->_getLanguageVar());
+		$this->cachemgmt->setCacheTimeout($this->conf['cacheTimeOut']);
+		$this->cachemgmt->setRootPid($this->_getRootPid());
+	}
 }
 ?>
