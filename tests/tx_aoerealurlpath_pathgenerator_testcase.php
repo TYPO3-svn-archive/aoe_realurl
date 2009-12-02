@@ -181,6 +181,9 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 		$result = $this->pathgenerator->build ( 86, 5, 0 );
 		$this->assertEquals ( $result ['path'], 'languagemix-segment', 'wrong path build: should be languagemix-segment' );
 
+			// page root->excludefrommiddle->languagemix (austria)
+		$result = $this->pathgenerator->build ( 101, 5, 0 );
+		$this->assertEquals ( $result ['path'], 'languagemix-segment/another/vivelafrance', 'wrong path build: should be: languagemix-segment/another/vivelafrance' );
 	}
 
 	/**
