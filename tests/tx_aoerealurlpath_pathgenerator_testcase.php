@@ -250,6 +250,20 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 	}
 
 	/**
+	 * Retrieval works for URL for the external URL Doktype
+	 *
+	 * @test
+	 */
+	public function canResolveURLFromExternalURLField() {
+
+		$this->pathgenerator->init ( $this->fixture_defaultconfig () );
+
+		$result = $this->pathgenerator->build ( 199, 0, 0 );
+		$this->assertEquals ( $result ['path'], 'https://www.aoemedia.de', 'wrong path build: external URL is expected' );
+
+	}
+
+	/**
 	 * Retrieval works for URL as delegation target
 	 *
 	 * @test

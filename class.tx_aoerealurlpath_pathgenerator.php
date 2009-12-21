@@ -79,8 +79,11 @@ class tx_aoerealurlpath_pathgenerator
 		$lastPage = $rootline[count($rootline) - 1];
 
 		$pathString = '';
-		$overridePath = $this->_stripSlashes($lastPage['tx_aoerealurlpath_overridepath']);
-		if ($overridePath) {
+
+		if($lastPage['doktype'] == 3) {
+			$pathString = $this->_buildExternalURL($lastPage, $langid, $workspace);
+
+		} elseif ($overridePath = $this->_stripSlashes($lastPage['tx_aoerealurlpath_overridepath'])) {
 			$parts = explode('/',$overridePath);
 			$cleanParts = array_map( array($this, 'encodeTitle'), $parts);
 			$nonEmptyParts = array_filter($cleanParts);
@@ -94,7 +97,6 @@ class tx_aoerealurlpath_pathgenerator
 				$pathString = $this->_buildPath($this->conf['segTitleFieldList'], $rootline);
 			}
 		}
-
 		return array('path' => $pathString , 'rootPid' => $rootPid);
 	}
 
@@ -149,13 +151,8 @@ class tx_aoerealurlpath_pathgenerator
 
 				// if overlay for the of shortcuts is requested
 			if($this->extconfArr['localizeShortcuts'] && t3lib_div::inList($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'],'shortcut') && $langid) {
-				$relevantLangId = $langid;
-				if($this->extconfArr['useLanguagevisibility']) {
-					require_once(t3lib_extMgm::extPath("languagevisibility").'class.tx_languagevisibility_feservices.php');
-					$relevantLangId = tx_languagevisibility_feservices::getOverlayLanguageIdForElementRecord($id,'pages',$langid);
-				}
 
-				$resultOverlay = $this->sys_page->getPageOverlay($id,$relevantLangId);
+				$resultOverlay = $this->_getPageOverlay($id, $langid);
 				if($resultOverlay["shortcut"]) {
 					$result["shortcut"] = $resultOverlay["shortcut"];
 				}
@@ -454,6 +451,52 @@ class tx_aoerealurlpath_pathgenerator
 			$this->sys_page->versioningPreview = FALSE;
 
 		}
+	}
+
+	/**
+	 *
+	 * @param array $page
+	 * @param int $langid
+	 * @param int $workspace
+	 * @return string
+	 */
+	function _buildExternalURL($page, $langid=0, $workspace=0) {
+
+		$this->_initSysPage(0,$workspace);	// check defaultlang since overlays should not contain this (usually)
+		$fullPageArr = $this->sys_page->getPage($page['uid']);
+		if($langid) {
+			$fullPageArr = $this->_getPageOverlay($page['uid'], $langid);
+		}
+
+		t3lib_div::loadTCA('pages');
+		$prefix = false;
+		$prefixItems = $GLOBALS['TCA']['pages']['columns']['urltype']['config']['items'];
+		foreach($prefixItems as $prefixItem) {
+			if (intval($prefixItem['1'])==intval($fullPageArr['urltype'])) {
+				$prefix = $prefixItem['0'];
+				break;
+			}
+		}
+
+		if (!$prefix) {
+			$prefix = 'http://';
+		}
+		return $prefix.$fullPageArr['url'];
+	}
+
+	/**
+	 *
+	 * @param int $id
+	 * @param int $langid
+	 * @return array
+	 */
+	function _getPageOverlay($id, $langid=0) {
+		$relevantLangId = $langid;
+		if($this->extconfArr['useLanguagevisibility']) {
+			require_once(t3lib_extMgm::extPath("languagevisibility").'class.tx_languagevisibility_feservices.php');
+			$relevantLangId = tx_languagevisibility_feservices::getOverlayLanguageIdForElementRecord($id,'pages',$langid);
+		}
+		return $this->sys_page->getPageOverlay($id,$relevantLangId);
 	}
 
 }
