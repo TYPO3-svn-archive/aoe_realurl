@@ -415,12 +415,12 @@ class tx_aoerealurlpath_pathgenerator
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->conv_case($charset, $title, 'toLower');
 			// Convert some special tokens to the space character:
 		$space = isset($this->conf['spaceCharacter']) ? $this->conf['spaceCharacter'] : '-';
-		$processedTitle = preg_replace('/[ +]+/', $space, $processedTitle); // convert spaces
+		$processedTitle = preg_replace('/[\s+]+/', $space, $processedTitle); // convert spaces
 			// Convert extended letters to ascii equivalents:
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset, $processedTitle);
 			// Strip the rest...:
-		$processedTitle = ereg_replace('[^a-zA-Z0-9\\_\\' . $space . ']', '', $processedTitle); // strip the rest
-		$processedTitle = ereg_replace('\\' . $space . '+', $space, $processedTitle); // Convert multiple 'spaces' to a single one
+		$processedTitle = preg_replace('/[^a-zA-Z0-9\\_\\' . $space . ']/', $space, $processedTitle);
+		$processedTitle = preg_replace('/\\' . $space . '+/', $space, $processedTitle);
 		$processedTitle = trim($processedTitle, $space);
 		if ($this->conf['encodeTitle_userProc']) {
 			$params = array('pObj' => &$this , 'title' => $title , 'processedTitle' => $processedTitle);
