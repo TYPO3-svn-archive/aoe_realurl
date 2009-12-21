@@ -29,15 +29,14 @@
  * @author  Daniel Pötzinger
  * @author  Tolleiv Nietsch
  */
-/*** TODO:
-	-check if internal cache array makes sense
- **/
-/**
+ /**
  *
  * @author  Daniel Pötzinger
  * @author  Tolleiv Nietsch
  * @package realurl
  * @subpackage aoe_realurlpath
+ *
+ * @todo	check if internal cache array makes sense
  */
 class tx_aoerealurlpath_pathgenerator
 {
@@ -46,14 +45,24 @@ class tx_aoerealurlpath_pathgenerator
 	var $extconfArr; //ext_conf_template vars
 	var $doktypeCache = array();
 
+	/**
+	 *
+	 * @param array $conf
+	 * @return void
+	 */
 	function init ($conf)
 	{
 		$this->conf = $conf;
 		$this->extconfArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['aoe_realurlpath']);
 	}
+
 	/**
-	 *	 returns buildPageArray
-	 **/
+	 *
+	 * @param int $pid
+	 * @param int $langid
+	 * @param int $workspace
+	 * @return array	buildPageArray
+	 */
 	function build ($pid, $langid, $workspace)
 	{
 		if ($shortCutPid = $this->_checkForShortCutPageAndGetTarget($pid,$langid,$workspace)) {
@@ -135,10 +144,10 @@ class tx_aoerealurlpath_pathgenerator
 			if ($reclevel > 20) {
 				return false;
 			}
-			$this->_initSysPage(0,$workspace);  // check defaultlang since overlays should not contain this (usually)
+			$this->_initSysPage(0,$workspace);	// check defaultlang since overlays should not contain this (usually)
 			$result = $this->sys_page->getPage($id);
 
-			// if overlay for the of shortcuts is requested
+				// if overlay for the of shortcuts is requested
 			if($this->extconfArr['localizeShortcuts'] && t3lib_div::inList($GLOBALS['TYPO3_CONF_VARS']['FE']['pageOverlayFields'],'shortcut') && $langid) {
 				$relevantLangId = $langid;
 				if($this->extconfArr['useLanguagevisibility']) {
@@ -177,7 +186,7 @@ class tx_aoerealurlpath_pathgenerator
 							return false;
 						}
 
-						//look recursive:
+							//look recursive:
 						$subpageShortCut = $this->_checkForShortCutPageAndGetTarget($result['shortcut'],$langid,$workspace , $reclevel ++);
 						if ($subpageShortCut !== false) {
 							return $subpageShortCut;
@@ -191,7 +200,7 @@ class tx_aoerealurlpath_pathgenerator
 				$target = $this->_getDelegationTarget($result, $langid, $workspace);
 				if(is_numeric($target)) {
 					$res = $this->_checkForShortCutPageAndGetTarget($target, $langid, $workspace, $reclevel ++);
-					//if the recursion fails we keep the original target
+						//if the recursion fails we keep the original target
 					if($res === false) {
 						$res = $target;
 					}
@@ -224,10 +233,10 @@ class tx_aoerealurlpath_pathgenerator
 	 */
 	function _getRootLine ($pid, $langID, $wsId, $mpvar = '')
 	{
-		// Get rootLine for current site (overlaid with any language overlay records).
+			// Get rootLine for current site (overlaid with any language overlay records).
 		$this->_initSysPage($langID, $wsId);
 		$rootLine = $this->sys_page->getRootLine($pid, $mpvar);
-		//only return rootline to the given rootpid
+			//only return rootline to the given rootpid
 		$rootPidFound=FALSE;
 		while (!$rootPidFound &&  count($rootLine)>0) {
 			$last=array_pop($rootLine);
@@ -270,21 +279,18 @@ class tx_aoerealurlpath_pathgenerator
 	 **/
 	function _buildPath ($segment, $rootline)
 	{
-		//echo $segment;
 		$segment = t3lib_div::trimExplode(",", $segment);
-		//$segment[]="title";
-		//$segment = array_reverse($segment);
 		$path = array();
 		$size = count($rootline);
 		$rootline = array_reverse($rootline);
-		//do not include rootpage itself, except it is only the root and filename is set:
+			//do not include rootpage itself, except it is only the root and filename is set:
 		if ($size > 1 || $rootline[0]['tx_aoerealurlpath_overridesegment'] == '') {
 			array_shift($rootline);
 			$size = count($rootline);
 		}
 		$i = 1;
 		foreach ($rootline as $key => $value) {
-			//check if the page should exlude from path (if not last)
+				//check if the page should exlude from path (if not last)
 			if ($value['tx_aoerealurlpath_excludefrommiddle'] && $i != $size) {} else //the normal way
 			{
 
@@ -303,10 +309,8 @@ class tx_aoerealurlpath_pathgenerator
 			}
 			$i ++;
 		}
-		//build the path
+			//build the path
 		$path = implode("/", $path);
-		//debug($path);
-		//cleanup path
 		return $path;
 	}
 
@@ -408,16 +412,16 @@ class tx_aoerealurlpath_pathgenerator
 	 */
 	function encodeTitle ($title)
 	{
-		// Fetch character set:
+			// Fetch character set:
 		$charset = $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] ? $GLOBALS['TYPO3_CONF_VARS']['BE']['forceCharset'] : $GLOBALS['TSFE']->defaultCharSet;
-		// Convert to lowercase:
+			// Convert to lowercase:
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->conv_case($charset, $title, 'toLower');
-		// Convert some special tokens to the space character:
+			// Convert some special tokens to the space character:
 		$space = isset($this->conf['spaceCharacter']) ? $this->conf['spaceCharacter'] : '-';
 		$processedTitle = preg_replace('/[ +]+/', $space, $processedTitle); // convert spaces
-		// Convert extended letters to ascii equivalents:
+			// Convert extended letters to ascii equivalents:
 		$processedTitle = $GLOBALS['TSFE']->csConvObj->specCharsToASCII($charset, $processedTitle);
-		// Strip the rest...:
+			// Strip the rest...:
 		$processedTitle = ereg_replace('[^a-zA-Z0-9\\_\\' . $space . ']', '', $processedTitle); // strip the rest
 		$processedTitle = ereg_replace('\\' . $space . '+', $space, $processedTitle); // Convert multiple 'spaces' to a single one
 		$processedTitle = trim($processedTitle, $space);
@@ -425,7 +429,7 @@ class tx_aoerealurlpath_pathgenerator
 			$params = array('pObj' => &$this , 'title' => $title , 'processedTitle' => $processedTitle);
 			$processedTitle = t3lib_div::callUserFunction($this->conf['encodeTitle_userProc'], $params, $this);
 		}
-		// Return encoded URL:
+			// Return encoded URL:
 		return rawurlencode($processedTitle);
 	}
 
@@ -436,8 +440,9 @@ class tx_aoerealurlpath_pathgenerator
 	 * @return void
 	 */
 	function _initSysPage($langID,$workspace) {
-		if (! is_object($this->sys_page)) { // Create object if not found before:
-			// Initialize the page-select functions.
+		if (! is_object($this->sys_page)) {
+				// Create object if not found before:
+				// Initialize the page-select functions.
 			$this->sys_page = t3lib_div::makeInstance('t3lib_pageSelect');
 		}
 		$this->sys_page->sys_language_uid = $langID;
