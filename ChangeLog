@@ -1,3 +1,6 @@
+01.04.2010 Michael Klapper <michael.klapper@aoemedia.de>
+	* Task #5884: "t3lib_div::makeInstanceClassName" should depend on TYPO3 version
+
 5.10.2009
 	* the rootline is stopped at the defined rootpid
  	* bug in _getLanguage method resolved

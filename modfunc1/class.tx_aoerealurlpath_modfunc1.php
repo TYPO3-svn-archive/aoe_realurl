@@ -62,11 +62,13 @@ class tx_aoerealurlpath_modfunc1 extends t3lib_extobjbase
         global $BACK_PATH, $LANG, $SOBE;
         if ($this->pObj->id) {
             $theOutput = '';
-            $cachemgmtClassName = t3lib_div::makeInstanceClassName('tx_aoerealurlpath_cachemgmt');
-            $this->cachemgmt = new $cachemgmtClassName($GLOBALS['BE_USER']->workspace, 0, 1);
-
-            $pathgenClassName = t3lib_div::makeInstanceClassName('tx_aoerealurlpath_pathgenerator');
-            $this->pathgen = new $pathgenClassName();
+		if (version_compare(TYPO3_version,'4.3.0','<')) {
+			$cachemgmtClassName = t3lib_div::makeInstanceClassName('tx_aoerealurlpath_cachemgmt');
+			$this->cachemgmt = new $cachemgmtClassName($GLOBALS['BE_USER']->workspace, 0, 1);
+		} else {
+			$this->cachemgmt = t3lib_div::makeInstance('tx_aoerealurlpath_cachemgmt', $GLOBALS['BE_USER']->workspace, 0, 1);
+		}
+            $this->pathgen = t3lib_div::makeInstance('tx_aoerealurlpath_pathgenerator');
             $this->pathgen->init(array());
 
             // Depth selector:
