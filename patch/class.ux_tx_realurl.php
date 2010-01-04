@@ -86,59 +86,77 @@ class ux_tx_realurl extends tx_realurl {
 	 * @return	void
 	 */
 	function encodeSpURL(&$params, &$ref) {
-		if (TYPO3_DLOG)
-			t3lib_div::devLog ( 'Entering encodeSpURL for ' . $params ['LD'] ['totalURL'], 'realurl' );
-		if (! $params ['TCEmainHook']) {
-				// Return directly, if simulateStaticDocuments is set:
-			if ($GLOBALS ['TSFE']->config ['config'] ['simulateStaticDocuments']) {
-				$GLOBALS ['TT']->setTSlogMessage ( 'SimulateStaticDocuments is enabled. RealURL disables itself.', 2 );
+		if ($this->enableDevLog) {
+			t3lib_div::devLog('Entering encodeSpURL for ' . $params['LD']['totalURL'], 'realurl');
+		}
+
+		if (!$params['TCEmainHook']) {
+			// Return directly, if simulateStaticDocuments is set:
+			if ($GLOBALS['TSFE']->config['config']['simulateStaticDocuments']) {
+				$GLOBALS['TT']->setTSlogMessage('SimulateStaticDocuments is enabled. RealURL disables itself.', 2);
 				return;
 			}
-				// Return directly, if realurl is not enabled:
-			if (! $GLOBALS ['TSFE']->config ['config'] ['tx_realurl_enable']) {
-				$GLOBALS ['TT']->setTSlogMessage ( 'RealURL is not enabled in TS setup. Finished.' );
+
+			// Return directly, if realurl is not enabled:
+			if (!$GLOBALS['TSFE']->config['config']['tx_realurl_enable']) {
+				$GLOBALS['TT']->setTSlogMessage('RealURL is not enabled in TS setup. Finished.');
 				return;
 			}
 		}
-			// Checking prefix:
-		if (substr ( $params ['LD'] ['totalURL'], 0, strlen ( $this->prefixEnablingSpURL ) ) != $this->prefixEnablingSpURL)
+
+		// Checking prefix:
+		$prefix = $GLOBALS['TSFE']->absRefPrefix . $this->prefixEnablingSpURL;
+		if (substr($params['LD']['totalURL'], 0, strlen($prefix)) != $prefix) {
 			return;
-		if (TYPO3_DLOG)
-			t3lib_div::devLog ( 'Starting URL encode', 'realurl', - 1 );
-			// Initializing config / request URL:
-		$this->setConfig ();
-		$internalExtras = array ();
+		}
+
+		if ($this->enableDevLog) {
+			t3lib_div::devLog('Starting URL encode', 'realurl', -1);
+		}
+
+		// Initializing config / request URL:
+		$this->setConfig();
+		$internalExtras = array();
+
 			//danielp: add workspace to internal vars for caching purposes
-		if ($GLOBALS ['BE_USER']->workspace)
+		if ($GLOBALS ['BE_USER']->workspace) {
 			$internalExtras ['workspace'] = $GLOBALS ['BE_USER']->workspace;
-			// Init "Admin Jump"; If frontend edit was enabled by the current URL of the page, set it again in the generated URL (and disable caching!)
-		if (! $params ['TCEmainHook']) {
-			if ($GLOBALS ['TSFE']->applicationData ['tx_realurl'] ['adminJumpActive']) {
-				$GLOBALS ['TSFE']->set_no_cache ();
+		}
+		// Init "Admin Jump"; If frontend edit was enabled by the current URL of the page, set it again in the generated URL (and disable caching!)
+		if (!$params['TCEmainHook']) {
+			if ($GLOBALS['TSFE']->applicationData['tx_realurl']['adminJumpActive']) {
+				$GLOBALS['TSFE']->set_no_cache();
 				$this->adminJumpSet = TRUE;
-				$internalExtras ['adminJump'] = 1;
+				$internalExtras['adminJump'] = 1;
 			}
+
 			// If there is a frontend user logged in, set fe_user_prefix
-			if (is_array ( $GLOBALS ['TSFE']->fe_user->user )) {
+			if (is_array($GLOBALS['TSFE']->fe_user->user)) {
 				$this->fe_user_prefix_set = TRUE;
-				$internalExtras ['feLogin'] = 1;
+				$internalExtras['feLogin'] = 1;
 			}
 		}
-			// Parse current URL into main parts:
-		$uParts = parse_url ( $params ['LD'] ['totalURL'] );
-			// Look in memory cache first:
-		$newUrl = $this->encodeSpURL_encodeCache ( $uParts ['query'], $internalExtras );
-		if (! $newUrl) {
-				// Encode URL:
-			$newUrl = $this->encodeSpURL_doEncode ( $uParts ['query'], $this->extConf ['init'] ['enableCHashCache'], $params ['LD'] ['totalURL'] );
-				// Set new URL in cache:
-			$this->encodeSpURL_encodeCache ( $uParts ['query'], $internalExtras, $newUrl );
+
+		// Parse current URL into main parts:
+		$uParts = parse_url($params['LD']['totalURL']);
+
+		// Look in memory cache first:
+		$newUrl = $this->encodeSpURL_encodeCache($uParts['query'], $internalExtras);
+		if (!$newUrl) {
+
+			// Encode URL:
+			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache'], $params['LD']['totalURL']);
+
+			// Set new URL in cache:
+			$this->encodeSpURL_encodeCache($uParts['query'], $internalExtras, $newUrl);
 		}
-			// Adding any anchor there might be:
-		if ($uParts ['fragment'])
-			$newUrl .= '#' . $uParts ['fragment'];
-			// Setting the encoded URL in the LD key of the params array - that value is passed by reference and thus returned to the linkData function!
-		$params ['LD'] ['totalURL'] = $newUrl;
+
+		// Adding any anchor there might be:
+		if ($uParts['fragment']) {
+			$newUrl .= '#' . $uParts['fragment'];
+		}
+		// Setting the encoded URL in the LD key of the params array - that value is passed by reference and thus returned to the linkData function!
+		$params['LD']['totalURL'] = $newUrl;
 	}
 
 	/**
@@ -151,19 +169,21 @@ class ux_tx_realurl extends tx_realurl {
 	 * @see encodeSpURL()
 	 */
 	function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '') {
-			// Extract all GET parameters into an ARRAY:
-		$paramKeyValues = array ();
-		$GETparams = explode ( '&', $inputQuery );
-		foreach ( $GETparams as $paramAndValue ) {
-			list ( $p, $v ) = explode ( '=', $paramAndValue, 2 );
+
+		// Extract all GET parameters into an ARRAY:
+		$paramKeyValues = array();
+		$GETparams = explode('&', $inputQuery);
+		foreach ($GETparams as $paramAndValue) {
+			list($p, $v) = explode('=', $paramAndValue, 2);
 			if (strlen ( $p )) {
-				$paramKeyValues [rawurldecode ( $p )] = rawurldecode ( $v );
+				$paramKeyValues[rawurldecode($p)] = rawurldecode ($v);
 			}
 		}
 		$externamURL = $this->_checkForExternalPageAndGetTarget ( $paramKeyValues ['id'] );
 		if ($externamURL !== false) {
 			return $externamURL;
 		}
+		// Return new, Speaking URL encoded URL:
 		return parent::encodeSpURL_doEncode ( $inputQuery, $cHashCache, $origUrl );
 	}
 
@@ -176,10 +196,12 @@ class ux_tx_realurl extends tx_realurl {
 	 * @see decodeSpURL()
 	 */
 	function decodeSpURL_doDecode($speakingURIpath, $cHashCache = FALSE) {
-			// Cached info:
-		$cachedInfo = array ();
-			// Split URL + resolve parts of path:
-		$pathParts = explode ( '/', $speakingURIpath );
+
+		// Cached info:
+		$cachedInfo = array();
+
+		// Split URL + resolve parts of path:
+		$pathParts = explode('/', $speakingURIpath);
 
 			//clear former replaced empty values
 		if ($this->extConf ['init'] ['postReplaceEmptyValues'] == 1) {
@@ -191,60 +213,75 @@ class ux_tx_realurl extends tx_realurl {
 			}
 		}
 
-		$this->filePart = array_pop ( $pathParts );
-			// Checking default HTML name:
-		if (strlen ( $this->filePart ) && ($this->extConf ['fileName'] ['defaultToHTMLsuffixOnPrev'] || $this->extConf ['fileName'] ['acceptHTMLsuffix']) && ! isset ( $this->extConf ['fileName'] ['index'] [$this->filePart] )) {
-			$suffix = preg_quote ( $this->isString ( $this->extConf ['fileName'] ['defaultToHTMLsuffixOnPrev'], 'defaultToHTMLsuffixOnPrev' ) ? $this->extConf ['fileName'] ['defaultToHTMLsuffixOnPrev'] : '.html', '/' );
-			if ($this->isString ( $this->extConf ['fileName'] ['acceptHTMLsuffix'], 'acceptHTMLsuffix' )) {
-				$suffix = '(' . $suffix . '|' . preg_quote ( $this->extConf ['fileName'] ['acceptHTMLsuffix'], '/' ) . ')';
+		$this->filePart = array_pop($pathParts);
+
+		// Checking default HTML name:
+		if (strlen($this->filePart) && ($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] || $this->extConf['fileName']['acceptHTMLsuffix']) && !isset($this->extConf['fileName']['index'][$this->filePart])) {
+			$suffix = preg_quote($this->isString($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'], 'defaultToHTMLsuffixOnPrev') ? $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] : '.html', '/');
+			if ($this->isString($this->extConf['fileName']['acceptHTMLsuffix'], 'acceptHTMLsuffix')) {
+				$suffix = '(' . $suffix . '|' . preg_quote($this->extConf['fileName']['acceptHTMLsuffix'], '/') . ')';
 			}
-			$pathParts [] = preg_replace ( '/' . $suffix . '$/', '', $this->filePart );
+			$pathParts[] = preg_replace('/' . $suffix . '$/', '', $this->filePart);
 			$this->filePart = '';
 		}
-			// Setting original dir-parts:
+
+		// Setting original dir-parts:
 		$this->dirParts = $pathParts;
-			// Setting "preVars":
-		$pre_GET_VARS = $this->decodeSpURL_settingPreVars ( $pathParts, $this->extConf ['preVars'] );
+
+		// Setting "preVars":
+		$pre_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $this->extConf['preVars']);
+
 			// danielp: make preVars accessible
 		$this->pre_GET_VARS = $pre_GET_VARS;
-			// Setting page id:
-		list ( $cachedInfo ['id'], $id_GET_VARS, $cachedInfo ['rootpage_id'] ) = $this->decodeSpURL_idFromPath ( $pathParts );
-			// Fixed Post-vars:
-		$fixedPostVarSetCfg = $this->getPostVarSetConfig ( $cachedInfo ['id'], 'fixedPostVars' );
-		$fixedPost_GET_VARS = $this->decodeSpURL_settingPreVars ( $pathParts, $fixedPostVarSetCfg );
-			// Setting "postVarSets":
-		$postVarSetCfg = $this->getPostVarSetConfig ( $cachedInfo ['id'] );
-		$post_GET_VARS = $this->decodeSpURL_settingPostVarSets ( $pathParts, $postVarSetCfg );
-			// Looking for remaining parts:
-		if (count ( $pathParts )) {
-			$this->decodeSpURL_throw404 ( '"' . $speakingURIpath . '" could not be found, closest page matching is ' . substr ( implode ( '/', $this->dirParts ), 0, - strlen ( implode ( '/', $pathParts ) ) ) . '' );
+
+		// Setting page id:
+		list($cachedInfo['id'], $id_GET_VARS, $cachedInfo['rootpage_id']) = $this->decodeSpURL_idFromPath($pathParts);
+
+		// Fixed Post-vars:
+		$fixedPostVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id'], 'fixedPostVars');
+		$fixedPost_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $fixedPostVarSetCfg);
+
+		// Setting "postVarSets":
+		$postVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id']);
+		$post_GET_VARS = $this->decodeSpURL_settingPostVarSets($pathParts, $postVarSetCfg);
+
+		// Looking for remaining parts:
+		if (count($pathParts)) {
+			$this->decodeSpURL_throw404('"' . $speakingURIpath . '" could not be found, closest page matching is ' . substr(implode('/', $this->dirParts), 0, -strlen(implode('/', $pathParts))) . '');
 		}
-			// Setting filename:
-		$file_GET_VARS = $this->decodeSpURL_fileName ( $this->filePart );
-			// Merge Get vars together:
-		$cachedInfo ['GET_VARS'] = array ();
-		if (is_array ( $pre_GET_VARS ))
-			$cachedInfo ['GET_VARS'] = t3lib_div::array_merge_recursive_overrule ( $cachedInfo ['GET_VARS'], $pre_GET_VARS );
-		if (is_array ( $id_GET_VARS ))
-			$cachedInfo ['GET_VARS'] = t3lib_div::array_merge_recursive_overrule ( $cachedInfo ['GET_VARS'], $id_GET_VARS );
-		if (is_array ( $fixedPost_GET_VARS ))
-			$cachedInfo ['GET_VARS'] = t3lib_div::array_merge_recursive_overrule ( $cachedInfo ['GET_VARS'], $fixedPost_GET_VARS );
-		if (is_array ( $post_GET_VARS ))
-			$cachedInfo ['GET_VARS'] = t3lib_div::array_merge_recursive_overrule ( $cachedInfo ['GET_VARS'], $post_GET_VARS );
-		if (is_array ( $file_GET_VARS ))
-			$cachedInfo ['GET_VARS'] = t3lib_div::array_merge_recursive_overrule ( $cachedInfo ['GET_VARS'], $file_GET_VARS );
-			// cHash handling:
+
+		// Setting filename:
+		$file_GET_VARS = $this->decodeSpURL_fileName($this->filePart);
+
+		// Merge Get vars together:
+		$cachedInfo['GET_VARS'] = array();
+		if (is_array($pre_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $pre_GET_VARS);
+		if (is_array($id_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $id_GET_VARS);
+		if (is_array($fixedPost_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $fixedPost_GET_VARS);
+		if (is_array($post_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $post_GET_VARS);
+		if (is_array($file_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $file_GET_VARS);
+
+		// cHash handling:
 		if ($cHashCache) {
-			$cHash_value = $this->decodeSpURL_cHashCache ( $speakingURIpath );
+			$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
 			if ($cHash_value) {
-				$cachedInfo ['GET_VARS'] ['cHash'] = $cHash_value;
+				$cachedInfo['GET_VARS']['cHash'] = $cHash_value;
 			}
 		}
-			// Return information found:
+
+		// Return information found:
 		return $cachedInfo;
 	}
 }
-if (defined ( 'TYPO3_MODE' ) && $TYPO3_CONF_VARS [TYPO3_MODE] ['XCLASS'] ['ext/realurl/class.ux_tx_realurl.php']) {
-	include_once ($TYPO3_CONF_VARS [TYPO3_MODE] ['XCLASS'] ['ext/realurl/class.ux_tx_realurl.php']);
+
+
+if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.ux_tx_realurl.php']) {
+	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.ux_tx_realurl.php']);
 }
+
 ?>
