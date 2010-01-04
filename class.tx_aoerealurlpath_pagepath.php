@@ -206,7 +206,7 @@ class tx_aoerealurlpath_pagepath
 		if ($lang === FALSE) {
 				//TODO next line is not covered by a test
 			$lang = intval(t3lib_div::_GP($getVarName));
-			if ($lang == 0) {
+			if ($lang == 0 && method_exists($this->pObj, 'getRetrievedPreGetVar')) {
 				$lang = intval($this->pObj->getRetrievedPreGetVar($getVarName));
 			}
 		}
