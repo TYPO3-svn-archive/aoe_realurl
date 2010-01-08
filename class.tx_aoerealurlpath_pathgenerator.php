@@ -79,9 +79,11 @@ class tx_aoerealurlpath_pathgenerator
 		$lastPage = $rootline[count($rootline) - 1];
 
 		$pathString = '';
+		$external = false;
 
 		if($lastPage['doktype'] == 3) {
 			$pathString = $this->_buildExternalURL($lastPage, $langid, $workspace);
+			$external = true;
 
 		} elseif ($overridePath = $this->_stripSlashes($lastPage['tx_aoerealurlpath_overridepath'])) {
 			$parts = explode('/',$overridePath);
@@ -93,11 +95,12 @@ class tx_aoerealurlpath_pathgenerator
 			if ($this->_getDelegationFieldname($lastPage['doktype'])) {
 				$pathString = $this->_getDelegationTarget($lastPage);
 				if(!preg_match('/^[a-z]+:\/\//',$pathString)) $pathString = 'http://'.$pathString;
+				$external = true;
 			} else {
 				$pathString = $this->_buildPath($this->conf['segTitleFieldList'], $rootline);
 			}
 		}
-		return array('path' => $pathString , 'rootPid' => $rootPid);
+		return array('path' => $pathString , 'rootPid' => $rootPid, 'external'=>$external );
 	}
 
 	/**

@@ -105,7 +105,7 @@ class tx_aoerealurlpath_pagepath
 		} else {
 			$buildPageArray = $this->generator->build($pageId, $this->_getLanguageVar(), $this->_getWorkspaceId());
 			$buildedPath = $buildPageArray['path'];
-			$buildedPath = $this->cachemgmt->storeUniqueInCache($this->generator->getPidForCache(), $buildedPath);
+			$buildedPath = $this->cachemgmt->storeUniqueInCache($this->generator->getPidForCache(), $buildedPath, $buildPageArray['external']);
 			if ($this->_isCrawlerRun() && $GLOBALS['TSFE']->id==$pageId ) {
 				$GLOBALS['TSFE']->applicationData['tx_crawler']['log'][]='created: '.$buildedPath.' pid:'.$pageId.'/'.$this->generator->getPidForCache();
 			}
