@@ -195,7 +195,7 @@ class tx_aoerealurlpath_pagepath
 		$lang = FALSE;
 		$getVarName = $this->conf['languageGetVar']?$this->conf['languageGetVar']:'L';
 
-	// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
+			// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
 		if ($getVarName && array_key_exists($getVarName,$this->pObj->orig_paramKeyValues)) {
 			$lang = intval($this->pObj->orig_paramKeyValues[$getVarName]);
 				// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
@@ -210,7 +210,12 @@ class tx_aoerealurlpath_pagepath
 				$lang = intval($this->pObj->getRetrievedPreGetVar($getVarName));
 			}
 		}
-		return $lang;
+
+		if( $this->conf['languageGetVarPostFunc']) {
+			$params = array($lang);
+			$lang = t3lib_div::callUserFunction($this->conf['languageGetVarPostFunc'], $params, $this);
+		}
+		return intval($lang);
 	}
 
 	/**
