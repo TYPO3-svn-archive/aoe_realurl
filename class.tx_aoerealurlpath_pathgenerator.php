@@ -468,7 +468,7 @@ class tx_aoerealurlpath_pathgenerator
 		$this->_initSysPage(0,$workspace);	// check defaultlang since overlays should not contain this (usually)
 		$fullPageArr = $this->sys_page->getPage($page['uid']);
 		if($langid) {
-			$fullPageArr = $this->_getPageOverlay($page['uid'], $langid);
+			$fullPageArr = array_merge($fullPageArr, $this->_getPageOverlay($page['uid'], $langid));
 		}
 
 		t3lib_div::loadTCA('pages');
