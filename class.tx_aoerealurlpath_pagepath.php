@@ -212,8 +212,7 @@ class tx_aoerealurlpath_pagepath
 		}
 
 		if( $this->conf['languageGetVarPostFunc']) {
-			$params = array($lang);
-			$lang = t3lib_div::callUserFunction($this->conf['languageGetVarPostFunc'], $params, $this);
+			$lang = t3lib_div::callUserFunction($this->conf['languageGetVarPostFunc'], $lang, $this);
 		}
 		return intval($lang);
 	}
