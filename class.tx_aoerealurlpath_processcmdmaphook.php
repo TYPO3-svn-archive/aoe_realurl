@@ -52,5 +52,37 @@ class tx_aoerealurlpath_processcmdmaphook {
 			}
 		}
 	}
+
+
+	/**
+	 * In case an page-overlay is created automatically the excludeFromMiddle value needs to be copied
+	 * See issue #12007
+	 *
+	 * @author	Tolleiv Nietsch
+	 * @package realurl
+	 * @subpackage aoe_realurlpath
+	 * @param array $incomingFieldArray
+	 * @param string $table
+	 * @param string $id
+	 * @param object $ref
+	 * @return void
+	 */
+	public function processDatamap_preProcessFieldArray(&$incomingFieldArray, $table, $id, &$ref) {
+
+		if($table != 'pages_language_overlay' || $id != 'NEW') {
+			return;
+		}
+
+		if(intval($incomingFieldArray['pid'])) {
+			$parent = t3lib_BEfunc::getWorkspaceVersionOfRecord($ref->BE_USER->workspace, $table, intval($incomingFieldArray['pid']), 'uid,tx_aoerealurlpath_excludefrommiddle');
+			if(!$parent) {
+				$parent = t3lib_BEfunc::getRecord('pages', intval($incomingFieldArray['pid']), 'uid,tx_aoerealurlpath_excludefrommiddle');
+			}
+			if($parent['tx_aoerealurlpath_excludefrommiddle']) {
+				$incomingFieldArray['tx_aoerealurlpath_excludefrommiddle'] = $parent['tx_aoerealurlpath_excludefrommiddle'];
+			}
+		}
+	}
+
 }
 ?>

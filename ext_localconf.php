@@ -16,6 +16,9 @@ $GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] .= ',tx_aoerealurlpath_ov
 //register hook to mark cache as dirty
 $GLOBALS ['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamapClass']['aoe_realurlpath'] = 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_processcmdmaphook.php:&tx_aoerealurlpath_processcmdmaphook';
 
+// register hook to add the excludemiddle field into the list of fields for new localization records
+$GLOBALS ['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processDatamap_preProcessFieldArray']['aoe_realurlpath'] = 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_processcmdmaphook.php:&tx_aoerealurlpath_processcmdmaphook';
+
 //hook to force regeneration if crawler is active:
 if (TYPO3_MODE=='FE')	{
 	$TYPO3_CONF_VARS['SC_OPTIONS']['tslib/class.tslib_fe.php']['insertPageIncache']['aoerealurlpath'] = 'EXT:aoe_realurlpath/class.tx_aoerealurlpath_crawlerhook.php:tx_aoerealurlpath_crawlerhook';
