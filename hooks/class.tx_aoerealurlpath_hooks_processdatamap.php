@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2005 Kasper Sk�rh�j
+ *  (c) 2010 AOE media
  *  All rights reserved
  *
  *  This script is part of the Typo3 project. The Typo3 project is
@@ -27,6 +27,7 @@
 /**
  *
  * @author	Daniel Poetzinger
+ * @author	Tolleiv Nietsch
  */
 
 include_once (t3lib_extMgm::extPath ( 'aoe_realurlpath' ) . 'class.tx_aoerealurlpath_cachemgmt.php');
@@ -36,7 +37,7 @@ include_once (t3lib_extMgm::extPath ( 'aoe_realurlpath' ) . 'class.tx_aoerealurl
  * @package realurl
  * @subpackage aoe_realurlpath
  */
-class tx_aoerealurlpath_processcmdmaphook {
+class tx_aoerealurlpath_hooks_processdatamap {
 	function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, &$reference) {
 
 		if ($table == 'pages') {
@@ -74,10 +75,8 @@ class tx_aoerealurlpath_processcmdmaphook {
 		}
 
 		if(intval($incomingFieldArray['pid'])) {
-			$parent = t3lib_BEfunc::getWorkspaceVersionOfRecord($ref->BE_USER->workspace, $table, intval($incomingFieldArray['pid']), 'uid,tx_aoerealurlpath_excludefrommiddle');
-			if(!$parent) {
-				$parent = t3lib_BEfunc::getRecord('pages', intval($incomingFieldArray['pid']), 'uid,tx_aoerealurlpath_excludefrommiddle');
-			}
+			$parent = t3lib_BEfunc::getRecord('pages', intval($incomingFieldArray['pid']), 'uid,pid,tx_aoerealurlpath_excludefrommiddle');
+			t3lib_BEfunc::workspaceOL('pages', $parent);
 			if($parent['tx_aoerealurlpath_excludefrommiddle']) {
 				$incomingFieldArray['tx_aoerealurlpath_excludefrommiddle'] = $parent['tx_aoerealurlpath_excludefrommiddle'];
 			}

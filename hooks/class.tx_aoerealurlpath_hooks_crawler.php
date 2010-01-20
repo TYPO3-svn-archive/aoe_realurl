@@ -2,7 +2,7 @@
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2005 Kasper Sk�rh�j
+ *  (c) 2009 AOE media
  *  All rights reserved
  *
  *  This script is part of the Typo3 project. The Typo3 project is
@@ -36,7 +36,7 @@ include_once (t3lib_extMgm::extPath ( 'aoe_realurlpath' ) . 'class.tx_aoerealurl
  * @package realurl
  * @subpackage aoe_realurlpath
  */
-class tx_aoerealurlpath_crawlerhook {
+class tx_aoerealurlpath_hooks_crawler {
 	/**
 	 * Publishes the current page as static HTML file if possible (depends on configuration and other circumstances)
 	 * (Hook-function called from TSFE, see ext_localconf.php for configuration)
