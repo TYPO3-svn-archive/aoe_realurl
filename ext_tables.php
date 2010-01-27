@@ -27,12 +27,18 @@ $tempColumns = array (
 		)
 	)
 );
-t3lib_div::loadTCA ( "pages_language_overlay" );
-t3lib_extMgm::addTCAcolumns ( 'pages_language_overlay', $tempColumns, 1 );
-t3lib_extMgm::addToAllTCAtypes ( 'pages_language_overlay', 'tx_aoerealurlpath_overridepath;;;;1-1-1, tx_aoerealurlpath_excludefrommiddle,tx_aoerealurlpath_overridesegment', '' );
-t3lib_div::loadTCA ( "pages" );
-t3lib_extMgm::addTCAcolumns ( "pages", $tempColumns, 1 );
-t3lib_extMgm::addToAllTCAtypes ( "pages", "tx_aoerealurlpath_overridepath;;;;1-1-1, tx_aoerealurlpath_excludefrommiddle,tx_aoerealurlpath_overridesegment" );
+
+t3lib_div::loadTCA("pages_language_overlay");
+t3lib_extMgm::addTCAcolumns('pages_language_overlay', $tempColumns, 1);
+t3lib_extMgm::addToAllTCAtypes('pages_language_overlay', 'tx_aoerealurlpath_overridepath;;;;1-1-1, tx_aoerealurlpath_excludefrommiddle,tx_aoerealurlpath_overridesegment', '', 'after:tx_realurl_pathsegment');
+t3lib_extMgm::addToAllTCAtypes('pages_language_overlay', '--div--;RealUrl', '', 'before:tx_realurl_pathsegment');
+
+t3lib_div::loadTCA("pages");
+t3lib_extMgm::addTCAcolumns("pages", $tempColumns, 1 );
+t3lib_extMgm::addToAllTCAtypes("pages", "tx_aoerealurlpath_overridepath;;;;1-1-1, tx_aoerealurlpath_excludefrommiddle,tx_aoerealurlpath_overridesegment", '', 'after:tx_realurl_pathsegment');
+t3lib_extMgm::addToAllTCAtypes('pages', '--div--;RealUrl', '', 'before:tx_realurl_pathsegment');
+
+$GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment']['displayCond'] = 'EXT:aoe_realurlpath:LOADED:false';
 
 if (TYPO3_MODE == "BE") {
 	t3lib_extMgm::insertModuleFunction ( "web_info", "tx_aoerealurlpath_modfunc1", t3lib_extMgm::extPath ( $_EXTKEY ) . "modfunc1/class.tx_aoerealurlpath_modfunc1.php", "LLL:EXT:aoe_realurlpath/locallang_db.xml:moduleFunction.tx_aoerealurlpath_modfunc1" );
