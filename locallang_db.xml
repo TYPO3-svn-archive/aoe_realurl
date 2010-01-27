@@ -10,13 +10,13 @@
 	<data type="array">
 		<languageKey index="default" type="array">
 			<label index="pages.tx_aoerealurlpath_overridepath">
-				override url path
+				Override url path
 			</label>
 			<label index="pages.tx_aoerealurlpath_excludefrommiddle">
-				exclude from middle of paths
+				Exclude from middle of paths
 			</label>
 			<label index="pages.tx_aoerealurlpath_overridesegment">
-				override pathsegment (filename)
+				Override pathsegment (filename)
 			</label>
 			<label index="moduleFunction.tx_aoerealurlpath_modfunc1">
 				AOE Realurl Path Cache Infos
@@ -24,10 +24,10 @@
 		</languageKey>
 		<languageKey index="de" type="array">
 			<label index="pages.tx_aoerealurlpath_overridepath">
-				kompletten realurl Pfad überschreiben
+				Kompletten realurl Pfad überschreiben
 			</label>
 			<label index="pages.tx_aoerealurlpath_excludefrommiddle">
-				nicht in der Mitte von Pfaden anzeigen
+				Nicht in der Mitte von Pfaden anzeigen
 			</label>
 			<label index="pages.tx_aoerealurlpath_overridesegment">
 				Pfadsegment für diese Seite
