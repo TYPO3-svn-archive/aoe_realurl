@@ -5,10 +5,10 @@
 $extensionPath = t3lib_extMgm::extPath('aoe_realurlpath');
 return array(
 	'tx_aoerealurlpath_cachemgmt' => $extensionPath . 'class.tx_aoerealurlpath_cachemgmt.php',
-	'tx_aoerealurlpath_crawlerhook' => $extensionPath . 'class.tx_aoerealurlpath_crawlerhook.php',
+	'tx_aoerealurlpath_hooks_crawler' => $extensionPath . 'hooks/class.tx_aoerealurlpath_hooks_crawler.php',
 	'tx_aoerealurlpath_pagepath' => $extensionPath . 'class.tx_aoerealurlpath_pagepath.php',
 	'tx_aoerealurlpath_pathgenerator' => $extensionPath . 'class.tx_aoerealurlpath_pathgenerator.php',
-	'tx_aoerealurlpath_processcmdmaphook' => $extensionPath . 'class.tx_aoerealurlpath_processcmdmaphook.php',
+	'tx_aoerealurlpath_hooks_processdatamap' => $extensionPath . 'hooks/class.tx_aoerealurlpath_hooks_processdatamap.php',
 	'tx_aoerealurlpath_modfunc1' => $extensionPath . 'modfunc1/class.tx_aoerealurlpath_modfunc1.php',
 	'tx_aoerealurlpath_cachemgmt_testcase' => $extensionPath . 'tests/tx_aoerealurlpath_cachemgmt_testcase.php',
 	'tx_aoerealurlpath_pagepath_testcase' => $extensionPath . 'tests/tx_aoerealurlpath_pagepath_testcase.php',
