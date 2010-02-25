@@ -24,14 +24,10 @@
  *
  * This copyright notice MUST APPEAR in all copies of the script!
  ***************************************************************/
+
 /**
  *
- * @author  Daniel Pötzinger
- * @author  Tolleiv Nietsch
- */
-/**
- *
- * @author  Daniel Pötzinger
+ * @author  Daniel P�tzinger
  * @author  Tolleiv Nietsch
  * @package realurl
  * @subpackage aoe_realurlpath
@@ -291,11 +287,7 @@ class tx_aoerealurlpath_pathgenerator {
 		foreach ( $rootline as $key => $value ) {
 				//check if the page should exlude from path (if not last)
 			if ($value ['tx_aoerealurlpath_excludefrommiddle'] && $i != $size) {
-			} else //the normal way
-{
-
-				//t3lib_div::debug(array("lang"=>$rootline,"default"=>$defaultLangRootline));
-
+			} else {  //the normal way
 
 				$pathSeg = $this->_getPathSeg ( $value, $segment );
 				if (strcmp ( $pathSeg, '' ) === 0) {

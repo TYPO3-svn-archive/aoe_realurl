@@ -21,6 +21,15 @@
 			<label index="moduleFunction.tx_aoerealurlpath_modfunc1">
 				AOE Realurl Path Cache Infos
 			</label>
+			<label index="pages.tx_aoerealurlpath_info">
+				Final path preview:
+			</label>
+			<label index="pages.tx_aoerealurlpath_info.ok">
+				Generated URL seems to have no conflicts with other pages.
+			</label>
+			<label index="pages.tx_aoerealurlpath_info.err">
+				The generated URL has conflicts with other pages.
+			</label>
 		</languageKey>
 		<languageKey index="de" type="array">
 			<label index="pages.tx_aoerealurlpath_overridepath">
