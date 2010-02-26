@@ -164,6 +164,13 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 			// assuming that 1010 is a workspace overlay for 1000
 		$path = $cache->storeUniqueInCache ( '1010', 'test1000' );
 		$this->assertEquals ( 'test1000', $cache->isInCache ( 1010 ), 'should be in cache' );
+
+			// assuming that 1020 is a workspace overlay for 1002
+		$path = $cache->storeUniqueInCache ( '1020', 'test1002' );
+		$this->assertEquals ( 'test1002', $cache->isInCache ( 1020 ), 'should be in cache' );
+			// now try to add the live record to cache
+		$path = $cache->storeUniqueInCache ( '1002', 'test1002' );
+		$this->assertEquals ( 'test1002', $cache->isInCache ( 1002 ), 'should be in cache' );
 	}
 
 	/**

@@ -185,12 +185,19 @@ class tx_aoerealurlpath_cachemgmt {
 		if ($this->isInCache ( $pid ) === false) {
 			$this->_checkForCleanupCache ( $pid, $buildedPath );
 				//do cleanup of old cache entries:
-			$_live = $pid;
-			if($this->getWorkspaceId() > 0) {
+			$_ignore = $pid;
+			$_workspace = $this->getWorkspaceId();
+			if($_workspace > 0) {
 				$record = t3lib_BEfunc::getLiveVersionOfRecord('pages', $pid, 'uid');
-				$_live = $record['uid'];
+				if(!is_array($record)) {
+					$record = t3lib_BEfunc::getWorkspaceVersionOfRecord($_workspace, 'pages', $pid, '*');
+				}
+				if(is_array($record)) {
+					$_ignore = $record['uid'];
+				}
 			}
-			if ($this->_readCacheForPath ( $buildedPath , $_live) && ! $disableCollisionDetection) {
+
+			if ($this->_readCacheForPath ( $buildedPath , $_ignore) && ! $disableCollisionDetection) {
 				$buildedPath .= '_' . $pid;
 			}
 				//do insert

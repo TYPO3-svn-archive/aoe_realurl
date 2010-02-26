@@ -30,7 +30,6 @@ $tempColumns = array (
 		"label" => "LLL:EXT:aoe_realurlpath/locallang_db.xml:pages.tx_aoerealurlpath_info",
 		"config" => array (
 			"type" => "user",
-			"noTableWrapping" => true,
 			"userFunc" => "EXT:aoe_realurlpath/class.tx_aoerealurlpath_tceforms.php:tx_aoerealurlpath_tceforms->render_infoField"
 		)
 	)
