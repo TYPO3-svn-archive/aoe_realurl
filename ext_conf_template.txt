@@ -16,3 +16,6 @@ localizeShortcuts = 0
   # cat=basic//10; type=boolean; label= Use languagevisibility : Takes settings/fallbacks with the languagevisibility extensions into account
 useLanguagevisibility = 0
 
+
+  # cat=basic//10; type=boolean; label= Enable url info within backend forms (clear conf cache)
+enableLiveInfo = 0
