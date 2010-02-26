@@ -185,7 +185,12 @@ class tx_aoerealurlpath_cachemgmt {
 		if ($this->isInCache ( $pid ) === false) {
 			$this->_checkForCleanupCache ( $pid, $buildedPath );
 				//do cleanup of old cache entries:
-			if ($this->_readCacheForPath ( $buildedPath ) && ! $disableCollisionDetection) {
+			$_live = $pid;
+			if($this->getWorkspaceId() > 0) {
+				$record = t3lib_BEfunc::getLiveVersionOfRecord('pages', $pid, 'uid');
+				$_live = $record['uid'];
+			}
+			if ($this->_readCacheForPath ( $buildedPath , $_live) && ! $disableCollisionDetection) {
 				$buildedPath .= '_' . $pid;
 			}
 				//do insert
@@ -211,8 +216,14 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @param string Path
 	 * @return string unique path in cache
 	 **/
-	function _readCacheForPath($pagePath) {
-		$where = "path=\"" . $pagePath . '"' . $this->_getAddCacheWhere ( TRUE );
+	function _readCacheForPath($pagePath, $ignoreUid=null) {
+
+		if(is_numeric($ignoreUid)) {
+			$where = 'path="' . $pagePath . '" AND pageid != "' . intval($ignoreUid) .'" ';
+		} else {
+			$where = 'path="' . $pagePath . '" ';
+		}
+		$where .= $this->_getAddCacheWhere ( TRUE );
 		if (method_exists ( $GLOBALS ['TYPO3_DB'], 'exec_SELECTquery_master' )) {
 				// Force select to use master server in t3p_scalable
 			$res = $GLOBALS ['TYPO3_DB']->exec_SELECTquery_master ( "*", "tx_aoerealurlpath_cache", $where );
@@ -399,7 +410,7 @@ class tx_aoerealurlpath_cachemgmt {
 			//without the additional keys, thats for compatibility reasons
 			$where = '';
 		} else {
-			$where = ' AND workspace=' . intval ( $this->getWorkspaceId () ) . ' AND languageid=' . intval ( $this->getLanguageId () );
+			$where = ' AND workspace IN (0,' . intval ( $this->getWorkspaceId () ) . ') AND languageid=' . intval ( $this->getLanguageId () );
 		}
 		if ($withRootPidCheck) {
 			$where .= ' AND rootpid=' . intval ( $this->getRootPid () );

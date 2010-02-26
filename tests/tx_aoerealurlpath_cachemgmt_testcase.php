@@ -36,6 +36,8 @@ require_once (PATH_t3lib . 'class.t3lib_tcemain.php');
 
 class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase {
 
+	private $rootlineFields;
+
 	public function setUp() {
 		$GLOBALS['TYPO3_DB']->debugOutput = true;
 		$this->createDatabase();
@@ -55,6 +57,9 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 			}
 		}
 		$this->importExtensions($extList);
+
+		$this->importDataSet ( dirname ( __FILE__ ) . '/fixtures/page-livews.xml' );
+		$this->importDataSet ( dirname ( __FILE__ ) . '/fixtures/page-ws.xml' );
 
 		if (!is_object($GLOBALS['TSFE']->csConvObj)) {
 			$GLOBALS['TSFE']->csConvObj=t3lib_div::makeInstance('t3lib_cs');
@@ -131,6 +136,34 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 		$this->assertEquals ( 'test9999', $cache->isInCache ( 9999 ), 'should be in cache' );
 		$path = $cache->storeUniqueInCache ( '9998', 'test9999' );
 		$this->assertEquals ( 'test9999_9998', $cache->isInCache ( 9998 ), 'should be in cache' );
+	}
+
+	/**
+	 * Cache avoids collisions
+	 *
+	 * @test
+	 */
+	public function storeInCacheCollisionInWorkspace() {
+
+			// new cachemgm for live workspace
+		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
+		$cache->setCacheTimeOut ( 200 );
+		$cache->setRootPid ( 1 );
+		$path = $cache->storeUniqueInCache ( '1000', 'test1000' );
+		$this->assertEquals ( 'test1000', $cache->isInCache ( 1000 ), 'should be in cache' );
+		unset($cache);
+
+			// new cachemgm with workspace setting
+		$cache = new tx_aoerealurlpath_cachemgmt ( 1, 0 );
+		$cache->setCacheTimeOut ( 200 );
+		$cache->setRootPid ( 1 );
+			// assuming that 1001 is a different page
+		$path = $cache->storeUniqueInCache ( '1001', 'test1000' );
+		$this->assertEquals ( 'test1000_1001', $cache->isInCache ( 1001 ), 'should be in cache' );
+
+			// assuming that 1010 is a workspace overlay for 1000
+		$path = $cache->storeUniqueInCache ( '1010', 'test1000' );
+		$this->assertEquals ( 'test1000', $cache->isInCache ( 1010 ), 'should be in cache' );
 	}
 
 	/**
