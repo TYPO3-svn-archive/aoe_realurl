@@ -174,6 +174,30 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	}
 
 	/**
+	 * Cache collisiondetetion makes sure that even if a workspace uses the cache
+	 * no false positive collision between LIVE and Workspace is found
+	 *
+	 * @test
+	 */
+	public function storeInCacheNoCollisionInLiveWorkspace() {
+
+			// new cachemgm for live workspace
+		$cache = new tx_aoerealurlpath_cachemgmt ( 1, 0 );
+		$cache->setCacheTimeOut ( 200 );
+		$cache->setRootPid ( 1 );
+		$path = $cache->storeUniqueInCache ( '1001', 'test1000' );
+		$this->assertEquals ( 'test1000', $cache->isInCache ( 1001 ), 'should be in cache' );
+		unset($cache);
+
+		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
+		$cache->setCacheTimeOut ( 200 );
+		$cache->setRootPid ( 1 );
+		$path = $cache->storeUniqueInCache ( '1000', 'test1000' );
+		$this->assertEquals ( 'test1000', $cache->isInCache ( 1000 ), 'should be in cache and should not collide with the workspace-record' );
+
+	}
+
+	/**
 	 * Cache should work within several workspaces
 	 *
 	 * @test

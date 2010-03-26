@@ -90,7 +90,7 @@ class tx_aoerealurlpath_tceforms {
 
 		$urlp2 = implode('/', $params ['pathParts']) . '.html'; /*TODO realurl has a more complicated way to apply the .html  postfix ... */
 		$t3env->popEnv();
-
+			//TODO - inlined functionality should set in tools cools
 		if(strcmp($urlp1, $urlp2)!== 0 || stristr($urlp2, '_'.$pid)) {
 			$icon = t3lib_iconWorks::skinImg($GLOBALS['BACK_PATH'], 'gfx/icon_warning2.gif');
 			$iconAlt = 'Error';
