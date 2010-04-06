@@ -95,6 +95,10 @@ class tx_aoerealurlpath_tceforms {
 			$icon = t3lib_iconWorks::skinImg($GLOBALS['BACK_PATH'], 'gfx/icon_warning2.gif');
 			$iconAlt = 'Error';
 			$msg = $GLOBALS['LANG']->sl('LLL:EXT:aoe_realurlpath/locallang_db.xml:pages.tx_aoerealurlpath_info.err');
+
+			if (version_compare(TYPO3_version,'4.3','>='))
+                        	$this->addMessage($msg, t3lib_FlashMessage::WARNING);
+
 		} else {
 			$icon = t3lib_iconWorks::skinImg($GLOBALS['BACK_PATH'], 'gfx/icon_ok.gif');
 			$iconAlt = 'OK';
@@ -102,6 +106,29 @@ class tx_aoerealurlpath_tceforms {
 		}
 		return $urlp1 . ' <img '.$icon. ' alt="' . $iconAlt . '" title="' . $msg . '" />';
 	}
+
+        /**
+         * This method is used to add a message to the internal queue
+         *
+         * NOTE:
+         * This method is basesd on TYPO3 4.3 or higher!
+         *
+         * @param  string  the message itself
+         * @param  integer message level (-1 = success (default), 0 = info, 1 = notice, 2 = warning, 3 = error)
+         *
+         * @access private
+         * @return void
+         */
+        private function addMessage($message, $severity = t3lib_FlashMessage::OK) {
+                $message = t3lib_div::makeInstance(
+                        't3lib_FlashMessage',
+                        $message,
+                        '',
+                        $severity
+                );
+
+                t3lib_FlashMessageQueue::addMessage($message);
+        }
 }
 
 ?>
