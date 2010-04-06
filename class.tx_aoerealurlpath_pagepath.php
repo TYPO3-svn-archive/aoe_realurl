@@ -260,7 +260,14 @@ class tx_aoerealurlpath_pagepath {
 	 * @return boolean
 	 */
 	function _isCrawlerRun() {
-		if (t3lib_extMgm::isLoaded ( 'crawler' ) && $GLOBALS ['TSFE']->applicationData ['tx_crawler'] ['running'] && in_array ( 'tx_cachemgm_recache', $GLOBALS ['TSFE']->applicationData ['tx_crawler'] ['parameters'] ['procInstructions'] )) {
+		if (
+			t3lib_extMgm::isLoaded('crawler')
+			&& $GLOBALS['TSFE']->applicationData['tx_crawler']['running'] 
+			&& (
+				in_array('tx_cachemgm_recache', $GLOBALS['TSFE']->applicationData['tx_crawler']['parameters']['procInstructions'])
+				|| in_array('tx_aoerealurlpath_rebuild', $GLOBALS['TSFE']->applicationData['tx_crawler']['parameters']['procInstructions'])
+			)
+		) {
 			return true;
 		} else {
 			return false;
