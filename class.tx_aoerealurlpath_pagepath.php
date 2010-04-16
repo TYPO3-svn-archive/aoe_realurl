@@ -155,6 +155,15 @@ class tx_aoerealurlpath_pagepath {
 	 * @return void
 	 */
 	function _checkAndDoRedirect($path) {
+
+		$_params = array();
+		if (is_array ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php']['checkAndDoRedirect']))	{
+			foreach ($GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['EXT:aoe_realurlpath/class.tx_aoerealurlpath_pagepath.php']['checkAndDoRedirect'] as $_funcRef)	{
+				t3lib_div::callUserFunction($_funcRef, $_params, $this);
+			}
+		}
+
+			//TODO: get rid of this stupid native connection
 		if (t3lib_extMgm::isLoaded ( 'aoe_redirects' )) {
 			require_once (t3lib_extMgm::extPath ( 'aoe_redirects' ) . 'api/class.redirectmanager.php');
 
