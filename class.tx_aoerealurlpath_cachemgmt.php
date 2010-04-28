@@ -174,12 +174,12 @@ class tx_aoerealurlpath_cachemgmt {
 	}
 
 	/**
-	 * stores the path in cache and checks if that path is unique, if not this function makes the path unique by adding some numbers
-	 * (hrows error if caching fails)
+	 * Stores the path in cache and checks if that path is unique, if not this function makes the path unique by adding some numbers
+	 * (throws error if caching fails)
 	 *
 	 * @param string Path
 	 * @return string unique path in cache
-	 **/
+	 */
 	function storeUniqueInCache($pid, $buildedPath, $disableCollisionDetection = false) {
 		$GLOBALS ['TYPO3_DB']->sql_query ( 'BEGIN' );
 		if ($this->isInCache ( $pid ) === false) {
@@ -187,7 +187,7 @@ class tx_aoerealurlpath_cachemgmt {
 				//do cleanup of old cache entries:
 			$_ignore = $pid;
 			$_workspace = $this->getWorkspaceId();
-			if($_workspace > 0) {
+			if ($_workspace > 0) {
 				$record = t3lib_BEfunc::getLiveVersionOfRecord('pages', $pid, 'uid');
 				if(!is_array($record)) {
 					$record = t3lib_BEfunc::getWorkspaceVersionOfRecord($_workspace, 'pages', $pid, '*');
@@ -292,6 +292,13 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return array
 	 */
 	function getCacheRowForPid($pid) {
+		
+		static $cache = array();
+		
+		if (isset($cache[$pid])) {
+			return $cache[$pid];
+		}
+		
 		$row = false;
 		$where = 'pageid=' . intval ( $pid ) . $this->_getAddCacheWhere ();
 		if (method_exists ( $GLOBALS ['TYPO3_DB'], 'exec_SELECTquery_master' )) {
@@ -300,8 +307,12 @@ class tx_aoerealurlpath_cachemgmt {
 		} else {
 			$query = $GLOBALS ['TYPO3_DB']->exec_SELECTquery ( '*', 'tx_aoerealurlpath_cache', $where );
 		}
-		if ($query)
+		if ($query) {
 			$row = $GLOBALS ['TYPO3_DB']->sql_fetch_assoc ( $query );
+		}
+		
+		$cache[$pid] = $row;
+		
 		return $row;
 	}
 
