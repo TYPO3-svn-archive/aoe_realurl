@@ -144,8 +144,18 @@ class tx_aoerealurlpath_pathgenerator {
 		if ($this->conf ['renderShortcuts']) {
 			return false;
 		} else {
+			
+			static $cache = array();
+			$paramhash = intval($id).'_'.intval($langid).'_'.intval($workspace).'_'.intval($reclevel);
+			
+			if (isset($cache[$paramhash])) {
+				return $cache[$paramhash];
+			}
+			
+			$returnValue = NULL;
+			
 			if ($reclevel > 20) {
-				return false;
+				$returnValue =  false;
 			}
 			$this->_initSysPage ( 0, $workspace ); // check defaultlang since overlays should not contain this (usually)
 			$result = $this->sys_page->getPage ( $id );
@@ -163,7 +173,7 @@ class tx_aoerealurlpath_pathgenerator {
 				switch ($result ['shortcut_mode']) {
 					case '1' : //firstsubpage
 						if ($reclevel > 10) {
-							return false;
+							$returnValue = false;
 						}
 						$where = "pid=\"" . $id . "\"";
 						$query = $GLOBALS ['TYPO3_DB']->exec_SELECTquery ( "uid", "pages", $where, '', 'sorting', '0,1' );
@@ -171,25 +181,25 @@ class tx_aoerealurlpath_pathgenerator {
 							$resultfirstpage = $GLOBALS ['TYPO3_DB']->sql_fetch_assoc ( $query );
 						$subpageShortCut = $this->_checkForShortCutPageAndGetTarget ( $resultfirstpage ['uid'], $langid, $workspace, $reclevel ++ );
 						if ($subpageShortCut !== false) {
-							return $subpageShortCut;
+							$returnValue = $subpageShortCut;
 						} else {
-							return $resultfirstpage ['uid'];
+							$returnValue = $resultfirstpage ['uid'];
 						}
 						break;
 					case '2' : //random
-						return false;
+						$returnValue = false;
 						break;
 					default :
 						if ($result ['shortcut'] == $id) {
-							return false;
+							$returnValue = false;
 						}
 
 						//look recursive:
 						$subpageShortCut = $this->_checkForShortCutPageAndGetTarget ( $result ['shortcut'], $langid, $workspace, $reclevel ++ );
 						if ($subpageShortCut !== false) {
-							return $subpageShortCut;
+							$returnValue = $subpageShortCut;
 						} else {
-							return $result ['shortcut'];
+							$returnValue = $result ['shortcut'];
 						}
 						break;
 				}
@@ -205,9 +215,13 @@ class tx_aoerealurlpath_pathgenerator {
 				} else {
 					$res = $result ['uid'];
 				}
-				return $res;
-			} else
-				return false;
+				$returnValue = $res;
+			} else {
+				$returnValue = false;
+			}
+			
+			$cache[$paramhash] = $returnValue;
+			return $returnValue;
 		}
 	}
 
@@ -430,6 +444,7 @@ class tx_aoerealurlpath_pathgenerator {
 	}
 
 	/**
+	 * 
 	 *
 	 * @param int $langID
 	 * @param int $workspace
@@ -439,7 +454,12 @@ class tx_aoerealurlpath_pathgenerator {
 		if (! is_object ( $this->sys_page )) {
 			// Create object if not found before:
 			// Initialize the page-select functions.
-			$this->sys_page = t3lib_div::makeInstance ( 't3lib_pageSelect' );
+			if (is_object($GLOBALS['TSFE']->sys_page)) {
+				// reuse the global object (to benefit from filled caches)
+				$this->sys_page = $GLOBALS['TSFE']->sys_page;
+			} else {
+				$this->sys_page = t3lib_div::makeInstance ( 't3lib_pageSelect' );
+			}
 		}
 		$this->sys_page->sys_language_uid = $langID;
 		if ($workspace != 0 && is_numeric ( $workspace )) {
@@ -448,7 +468,6 @@ class tx_aoerealurlpath_pathgenerator {
 		} else {
 			$this->sys_page->versioningWorkspaceId = 0;
 			$this->sys_page->versioningPreview = FALSE;
-
 		}
 	}
 
