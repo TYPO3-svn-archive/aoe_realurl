@@ -39,8 +39,47 @@ class ux_tx_realurl extends tx_realurl {
 	function getRetrievedPreGetVar($key) {
 		return $this->pre_GET_VARS [$key];
 	}
+	
+	protected function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE) {
+		
+		static $cache = array();
+		$paramhash = md5(serialize($cfg).serialize($aliasValue).serialize($onlyNonExpired));
+		
+		if (isset($cache[$paramhash])) {
+			return $cache[$paramhash];
+		}
+		
+		$returnValue = parent::lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired);
 
+		$cache[$paramhash] = $returnValue;
+		return $returnValue;
+	}
+	
+	protected function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '') {
+		static $cache = array();
+		$paramhash = md5(serialize($cfg).serialize($idValue).serialize($lang).serialize($aliasValue));
+		
+		if (isset($cache[$paramhash])) {
+			return $cache[$paramhash];
+		}
+		
+		$returnValue = parent::lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue);
+
+		$cache[$paramhash] = $returnValue;
+		return $returnValue;
+
+	}
+	
 	function _checkForExternalPageAndGetTarget($id) {
+		
+		static $cache = array();
+		
+		if (isset($cache[$id])) {
+			return $cache[$id];
+		}
+		
+		$returnValue = NULL;
+		
 		$where = "uid=\"" . intval ( $id ) . "\"";
 		$query = $GLOBALS ['TYPO3_DB']->exec_SELECTquery ( "uid,pid,url,doktype,urltype", "pages", $where );
 		if ($query) {
@@ -53,28 +92,30 @@ class ux_tx_realurl extends tx_realurl {
 				$url = $result ['url'];
 				switch ($result ['urltype']) {
 					case '1' :
-						return 'http://' . $url;
+						$returnValue = 'http://' . $url;
 						break;
 					case '4' :
-						return 'https://' . $url;
+						$returnValue = 'https://' . $url;
 						break;
 					case '2' :
-						return 'ftp://' . $url;
+						$returnValue = 'ftp://' . $url;
 						break;
 					case '3' :
-						return 'mailto:' . $url;
+						$returnValue = 'mailto:' . $url;
 						break;
 					default :
-						return $url;
+						$returnValue = $url;
 						break;
 
 				}
 			} else {
-				return false;
+				$returnValue = false;
 			}
 		} else {
-			return false;
+			$returnValue = false;
 		}
+		$cache[$id] = $returnValue;
+		return $returnValue;
 	}
 
 	/**
