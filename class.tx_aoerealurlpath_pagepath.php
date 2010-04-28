@@ -101,10 +101,10 @@ class tx_aoerealurlpath_pagepath {
 			//clear this page cache:
 			$this->cachemgmt->markAsDirtyCompletePid ( $pageId );
 		}
+		
+		$buildedPath = $this->cachemgmt->isInCache($pageId);
 
-		if ($this->cachemgmt->isInCache ( $pageId )) { //&& !$this->_isCrawlerRun()
-			$buildedPath = $this->cachemgmt->isInCache ( $pageId );
-		} else {
+		if (!$buildedPath) {
 			$buildPageArray = $this->generator->build ( $pageId, $this->_getLanguageVar (), $this->_getWorkspaceId () );
 			$buildedPath = $buildPageArray ['path'];
 			$buildedPath = $this->cachemgmt->storeUniqueInCache ( $this->generator->getPidForCache (), $buildedPath, $buildPageArray ['external'] );
@@ -121,10 +121,11 @@ class tx_aoerealurlpath_pagepath {
 	}
 
 	/**
-	 * gets the pageid from a pagepath, needs to check the cache
+	 * Gets the pageid from a pagepath, needs to check the cache
+	 * 
 	 * @param	array		Array of segments from virtual path
 	 * @return	integer		Page ID
-	 **/
+	 */
 	function _alias2id(&$pagePath) {
 		$pagePathOrigin = $pagePath;
 		$keepPath = array ();
