@@ -15,7 +15,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'description' => 'Powerful realurl path generation. Allows flexible paths. Support for overridepath, workspaces and exclude from middle feature',
 	'category' => 'fe',
 	'shy' => 0,
-	'version' => '0.4.1',
+	'version' => '0.4.dev',
 	'dependencies' => '',
 	'conflicts' => 'cooluri',
 	'priority' => '',
@@ -34,6 +34,7 @@ $EM_CONF[$_EXTKEY] = array(
 	'CGLcompliance_note' => '',
 	'constraints' => array(
 		'depends' => array(
+			'realurl' => '1.8.0-0.0.0'
 		),
 		'conflicts' => array(
 		),
