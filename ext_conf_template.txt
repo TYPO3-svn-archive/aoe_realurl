@@ -1,0 +1,21 @@
+
+  # cat=basic//10; type=boolean; label= add the fields overridepath and exclude also to page language overlay
+addpageOverlayFields = 1
+
+  # cat=basic//10; type=boolean; label= Add PATCH for real_url (enables direct links to external urls)
+applyPatch = 1
+
+  # cat=basic//10; type=text; label= Default expire time for generated paths (revalidates after x sec)
+defaultCacheTimeOut = 1000
+
+
+  # cat=basic//10; type=boolean; label= Localize Shortcuts : Only works if pages_language_overlay also contains shortcuts
+localizeShortcuts = 0
+
+
+  # cat=basic//10; type=boolean; label= Use languagevisibility : Takes settings/fallbacks with the languagevisibility extensions into account
+useLanguagevisibility = 0
+
+
+  # cat=basic//10; type=boolean; label= Enable url info within backend forms (clear conf cache)
+enableLiveInfo = 0

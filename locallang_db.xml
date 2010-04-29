@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<T3locallang>
+	<meta type="array">
+		<type>database</type>
+		<description>
+			Language labels for database tables/fields belonging to
+			extension 'aoe_realurlpath'
+		</description>
+	</meta>
+	<data type="array">
+		<languageKey index="default" type="array">
+			<label index="pages.tx_aoerealurlpath_overridepath">
+				Override url path
+			</label>
+			<label index="pages.tx_aoerealurlpath_excludefrommiddle">
+				Exclude from middle of paths
+			</label>
+			<label index="pages.tx_aoerealurlpath_overridesegment">
+				Override pathsegment (filename)
+			</label>
+			<label index="moduleFunction.tx_aoerealurlpath_modfunc1">
+				AOE Realurl Path Cache Infos
+			</label>
+			<label index="pages.tx_aoerealurlpath_info">
+				Final path preview:
+			</label>
+			<label index="pages.tx_aoerealurlpath_info.ok">
+				Generated URL seems to have no conflicts with other pages.
+			</label>
+			<label index="pages.tx_aoerealurlpath_info.err">
+				The generated URL has conflicts with other pages.
+			</label>
+		</languageKey>
+		<languageKey index="de" type="array">
+			<label index="pages.tx_aoerealurlpath_overridepath">
+				Kompletten realurl Pfad überschreiben
+			</label>
+			<label index="pages.tx_aoerealurlpath_excludefrommiddle">
+				Nicht in der Mitte von Pfaden anzeigen
+			</label>
+			<label index="pages.tx_aoerealurlpath_overridesegment">
+				Pfadsegment für diese Seite
+			</label>
+			<label index="moduleFunction.tx_aoerealurlpath_modfunc1">
+				AOE Realurl Pfadcache Infos
+			</label>
+		</languageKey>
+	</data>
+</T3locallang>
