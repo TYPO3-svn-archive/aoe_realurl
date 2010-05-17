@@ -97,6 +97,8 @@ class tx_aoerealurlpath_pathgenerator {
 				$pathString = $this->_buildPath ( $this->conf ['segTitleFieldList'], $rootline );
 			}
 		}
+		
+		
 		return array (
 			'path' => $pathString,
 			'rootPid' => $rootPid,
@@ -489,10 +491,12 @@ class tx_aoerealurlpath_pathgenerator {
 		t3lib_div::loadTCA ( 'pages' );
 		$prefix = false;
 		$prefixItems = $GLOBALS ['TCA'] ['pages'] ['columns'] ['urltype'] ['config'] ['items'];
-		foreach ( $prefixItems as $prefixItem ) {
-			if (intval ( $prefixItem ['1'] ) == intval ( $fullPageArr ['urltype'] )) {
-				$prefix = $prefixItem ['0'];
-				break;
+		if (is_array($prefixItems)) {
+			foreach ( $prefixItems as $prefixItem ) {
+				if (intval ( $prefixItem ['1'] ) == intval ( $fullPageArr ['urltype'] )) {
+					$prefix = $prefixItem ['0'];
+					break;
+				}
 			}
 		}
 
