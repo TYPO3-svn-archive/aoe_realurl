@@ -88,35 +88,34 @@ class tx_aoerealurlpath_pagepath {
 	 *
 	 * @param array $paramKeyValues from real_url
 	 * @param array $pathParts from real_url ??
-	 *
 	 * @return string with path
-	 **/
+	 */
 	function _id2alias($paramKeyValues) {
-		$pageId = $paramKeyValues ['id'];
-		if (! is_numeric ( $pageId )) {
-			$pageId = $GLOBALS ['TSFE']->sys_page->getPageIdFromAlias ( $pageId );
+		$pageId = $paramKeyValues['id'];
+		if (!is_numeric($pageId)) {
+			$pageId = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($pageId );
 		}
-		if ($this->_isCrawlerRun () && $GLOBALS ['TSFE']->id == $pageId) {
-			$GLOBALS ['TSFE']->applicationData ['tx_crawler'] ['log'] [] = 'aoe_realurlpath: _id2alias ' . $pageId . '/' . $this->_getLanguageVar () . '/' . $this->_getWorkspaceId ();
+		if ($this->_isCrawlerRun() && $GLOBALS['TSFE']->id == $pageId) {
+			$GLOBALS['TSFE']->applicationData['tx_crawler']['log'][] = 'aoe_realurlpath: _id2alias ' . $pageId . '/' . $this->_getLanguageVar() . '/' . $this->_getWorkspaceId();
 			//clear this page cache:
-			$this->cachemgmt->markAsDirtyCompletePid ( $pageId );
+			$this->cachemgmt->markAsDirtyCompletePid($pageId );
 		}
 		
 		$buildedPath = $this->cachemgmt->isInCache($pageId);
 
 		if (!$buildedPath) {
-			$buildPageArray = $this->generator->build ( $pageId, $this->_getLanguageVar (), $this->_getWorkspaceId () );
-			$buildedPath = $buildPageArray ['path'];
-			$buildedPath = $this->cachemgmt->storeUniqueInCache ( $this->generator->getPidForCache (), $buildedPath, $buildPageArray ['external'] );
-			if ($this->_isCrawlerRun () && $GLOBALS ['TSFE']->id == $pageId) {
-				$GLOBALS ['TSFE']->applicationData ['tx_crawler'] ['log'] [] = 'created: ' . $buildedPath . ' pid:' . $pageId . '/' . $this->generator->getPidForCache ();
+			$buildPageArray = $this->generator->build($pageId, $this->_getLanguageVar(), $this->_getWorkspaceId() );
+			$buildedPath = $buildPageArray['path'];
+			$buildedPath = $this->cachemgmt->storeUniqueInCache($this->generator->getPidForCache(), $buildedPath, $buildPageArray['external'] );
+			if($this->_isCrawlerRun() && $GLOBALS['TSFE']->id == $pageId) {
+				$GLOBALS['TSFE']->applicationData['tx_crawler']['log'][] = 'created: ' . $buildedPath . ' pid:' . $pageId . '/' . $this->generator->getPidForCache();
 			}
 		}
 		if ($buildedPath) {
-			$pagePath_exploded = explode ( '/', $buildedPath );
+			$pagePath_exploded = explode('/', $buildedPath );
 			return $pagePath_exploded;
 		} else {
-			return array ();
+			return array();
 		}
 	}
 
