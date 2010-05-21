@@ -48,9 +48,10 @@ class tx_aoerealurlpath_cachemgmt {
 	var $languageId;
 	//unique path check
 	var $rootPid;
-	var $cacheTimeOut = 0; //timeout in seconds for cache entries
+	var $cacheTimeOut = 1000; //timeout in seconds for cache entries
 	var $useUnstrictCacheWhere = FALSE;
 
+	static $cache = array();
 	/**
 	 *
 	 * @param int $workspace
@@ -59,10 +60,11 @@ class tx_aoerealurlpath_cachemgmt {
 	function tx_aoerealurlpath_cachemgmt($workspace, $languageid) {
 		$this->workspaceId = $workspace;
 		$this->languageId = $languageid;
-		$this->cacheTimeOut = 0;
 		$this->useUnstrictCacheWhere = FALSE;
 		$confArr = unserialize ( $GLOBALS ['TYPO3_CONF_VARS'] ['EXT'] ['extConf'] ['aoe_realurlpath'] );
-		$this->setCacheTimeOut ( $confArr ['defaultCacheTimeOut'] );
+		if(isset($confArr ['defaultCacheTimeOut'])) {
+			$this->setCacheTimeOut ( $confArr ['defaultCacheTimeOut'] );
+		}
 	}
 
 	/**
@@ -201,7 +203,7 @@ class tx_aoerealurlpath_cachemgmt {
 				$buildedPath .= '_' . $pid;
 			}
 				//do insert
-			$data ['tstamp'] = time ();
+			$data ['tstamp'] = time();
 			$data ['path'] = $buildedPath;
 			$data ['mpvar'] = "";
 			$data ['workspace'] = $this->getWorkspaceId ();
@@ -210,7 +212,9 @@ class tx_aoerealurlpath_cachemgmt {
 			$data ['pageid'] = $pid;
 
 			if ($GLOBALS ['TYPO3_DB']->exec_INSERTquery ( "tx_aoerealurlpath_cache", $data )) {
+				//TODO ... yeah we saved something in the database - any further problems?
 			} else {
+				//TODO ... d'oh database didn't like use - what's next?
 			}
 		}
 		$GLOBALS ['TYPO3_DB']->sql_query ( 'COMMIT' );
@@ -255,8 +259,6 @@ class tx_aoerealurlpath_cachemgmt {
 	function _readHistoryCacheForPath($pagePath) {
 		$where = "path=\"" . $pagePath . '"' . $this->_getAddCacheWhere ( TRUE );
 		$res = $GLOBALS ['TYPO3_DB']->exec_SELECTquery ( "*", "tx_aoerealurlpath_cachehistory", $where );
-		#$query = $GLOBALS['TYPO3_DB']->SELECTquery("*","tx_aoerealurlpath_cache",$where);
-		#debug($query);
 		if ($res)
 			$result = $GLOBALS ['TYPO3_DB']->sql_fetch_assoc ( $res );
 		if ($result ['pageid']) {
@@ -282,7 +284,6 @@ class tx_aoerealurlpath_cachemgmt {
 			} else {
 				return false;
 			}
-
 		}
 	}
 
@@ -292,17 +293,16 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return array
 	 */
 	function getCacheRowForPid($pid) {
-		
-		static $cache = array();
-		
-		if (isset($cache[$pid])) {
-			return $cache[$pid];
+
+		$cacheKey = $this->getCacheKey($pid);
+		if (isset($this->cache[$cacheKey]) && is_array($this->cache[$cacheKey])) {
+			return $this->cache[$cacheKey];
 		}
-		
+
 		$row = false;
 		$where = 'pageid=' . intval ( $pid ) . $this->_getAddCacheWhere ();
 		if (method_exists ( $GLOBALS ['TYPO3_DB'], 'exec_SELECTquery_master' )) {
-			// Force select to use master server in t3p_scalable
+				// Force select to use master server in t3p_scalable
 			$query = $GLOBALS ['TYPO3_DB']->exec_SELECTquery_master ( '*', 'tx_aoerealurlpath_cache', $where );
 		} else {
 			$query = $GLOBALS ['TYPO3_DB']->exec_SELECTquery ( '*', 'tx_aoerealurlpath_cache', $where );
@@ -310,9 +310,11 @@ class tx_aoerealurlpath_cachemgmt {
 		if ($query) {
 			$row = $GLOBALS ['TYPO3_DB']->sql_fetch_assoc ( $query );
 		}
-		
-		$cache[$pid] = $row;
-		
+
+		if(is_array($row)) {
+			$this->cache[$cacheKey] = $row;
+		}
+
 		return $row;
 	}
 
@@ -330,16 +332,23 @@ class tx_aoerealurlpath_cachemgmt {
 		}
 		return $rows;
 	}
+
+	/**
+	 *
+	 * @param integer $pid
+	 * @param string $newPath
+	 * @return void
+	 */
 	function _checkForCleanupCache($pid, $newPath) {
 		$row = $this->getCacheRowForPid ( $pid );
 		if (! is_array ( $row )) {
 			return false;
 		} elseif (! $this->_isCacheRowStillValid ( $row )) {
-			if ($newPath != $row ['path'])
+			if ($newPath != $row ['path']) {
 				$this->insertInCacheHistory ( $row );
+			}
 			$this->_delCacheForPid ( $row ['pageid'] );
 		}
-
 	}
 
 	/**
@@ -350,7 +359,7 @@ class tx_aoerealurlpath_cachemgmt {
 	function _isCacheRowStillValid($row) {
 		if ($row ['dirty'] == 1) {
 			return false;
-		} elseif (($row ['tstamp'] + $this->cacheTimeOut) < time ()) {
+		} elseif (($this->cacheTimeOut > 0) && (($row ['tstamp'] + $this->cacheTimeOut) < time())) {
 			return false;
 		} else {
 			return true;
@@ -363,6 +372,9 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return void
 	 */
 	function _delCacheForPid($pid) {
+
+		$this->cache[$this->getCacheKey($pid)] = false;
+
 		$where = "pageid=" . intval ( $pid ) . $this->_getAddCacheWhere ();
 		$GLOBALS ['TYPO3_DB']->exec_DELETEquery ( "tx_aoerealurlpath_cache", $where );
 	}
@@ -396,7 +408,7 @@ class tx_aoerealurlpath_cachemgmt {
 	 */
 	function insertInCacheHistory($row) {
 		unset ( $row ['dirty'] );
-		$row ['tstamp'] = time ();
+		$row ['tstamp'] = time();
 		$GLOBALS ['TYPO3_DB']->exec_INSERTquery ( "tx_aoerealurlpath_cachehistory", $row );
 	}
 
@@ -434,6 +446,10 @@ class tx_aoerealurlpath_cachemgmt {
 			$where .= ' AND rootpid=' . intval ( $this->getRootPid () );
 		}
 		return $where;
+	}
+
+	protected function getCacheKey($pid) {
+		return implode('-', array($pid, $this->getRootPid(),  $this->getWorkspaceId(), $this->getLanguageId()));
 	}
 }
 ?>
