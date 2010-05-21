@@ -323,6 +323,89 @@ class ux_tx_realurl extends tx_realurl {
 		// Return information found:
 		return $cachedInfo;
 	}
+	
+	
+	
+	/**
+	 * Overwriting original method to enable redirection to typolink parameters
+	 * 
+	 * Look for redirect configuration.
+	 * If the input path is found as key in $this->extConf['redirects'] this method redirects to the URL found as value
+	 *
+	 * @param	string		Path from SpeakingURL.
+	 * @return	void
+	 * @see decodeSpURL_doDecode()
+	 */
+	protected function decodeSpURL_checkRedirects($speakingURIpath) {
+		$speakingURIpath = trim($speakingURIpath);
+
+		if (isset($this->extConf['redirects'][$speakingURIpath])) {
+			$url = $this->extConf['redirects'][$speakingURIpath];
+			if (preg_match('/^30[1237];/', $url)) {
+				$redirectCode = intval(substr($url, 0, 3));
+				$url = substr($url, 4);
+				header('HTTP/1.0 ' . $redirectCode . ' Redirect');
+			}
+			header('Location: ' . t3lib_div::locationHeaderUrl($url));
+			exit();
+		}
+
+		// Regex redirects:
+		if (is_array($this->extConf['redirects_regex'])) {
+			foreach ($this->extConf['redirects_regex'] as $regex => $substString) {
+				if (preg_match('/' . $regex . '/', $speakingURIpath)) {
+					$url = @preg_replace('/' . $regex . '/', $substString, $speakingURIpath);
+					if ($url) {
+						if (preg_match('/^30[1237];/', $url)) {
+							$redirectCode = intval(substr($url, 0, 3));
+							header('HTTP/1.0 ' . $redirectCode . ' Redirect');
+							$url = substr($url, 4);
+						}
+						header('Location: ' . t3lib_div::locationHeaderUrl($url));
+						exit();
+					}
+				}
+			}
+		}
+
+		// DB defined redirects:
+		$hash = t3lib_div::md5int($speakingURIpath);
+		$url = $GLOBALS['TYPO3_DB']->fullQuoteStr($speakingURIpath, 'tx_realurl_redirects');
+		list($redirect_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'destination,has_moved', 'tx_realurl_redirects',
+			'url_hash=' . $hash . ' AND url=' . $url);
+		if (is_array($redirect_row)) {
+			// Update statistics
+			$fields_values = array(
+				'counter' => 'counter+1',
+				'tstamp' => time(),
+				'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
+			);
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects',
+				'url_hash=' . $hash . ' AND url=' . $url,
+				$fields_values, array('counter'));
+				
+			/**
+			 * This is the part the actually differs from the original method
+			 */
+			// Convert to realurl url if the path begins with '/id='
+			if (t3lib_div::isFirstPartOfStr($redirect_row['destination'], '/id=')) {
+				$redirect_row['destination'] = $this->encodeSpURL_doEncode(substr($redirect_row['destination'], 1), $this->extConf['init']['enableCHashCache']);
+			}
+			/**
+			 * This is the part the actually differs from the original method [end]
+			 */
+
+			// Redirect
+			if ($redirect_row['has_moved']) {
+				header('HTTP/1.1 301 Moved Permanently');
+			}
+
+			header('Location: ' . t3lib_div::locationHeaderUrl($redirect_row['destination']));
+			exit();
+		}
+	}
+	
 }
 
 
