@@ -72,6 +72,10 @@ class ux_tx_realurl extends tx_realurl {
 	
 	function _checkForExternalPageAndGetTarget($id) {
 		
+		if (!is_object($GLOBALS ['TSFE']->sys_page)) {
+			return false;
+		}
+		
 		static $cache = array();
 		
 		if (isset($cache[$id])) {
@@ -82,6 +86,7 @@ class ux_tx_realurl extends tx_realurl {
 		
 		$where = "uid=\"" . intval ( $id ) . "\"";
 		$query = $GLOBALS ['TYPO3_DB']->exec_SELECTquery ( "uid,pid,url,doktype,urltype", "pages", $where );
+		if (is_object($GLOBALS ['TSFE']->sys_page))
 		if ($query) {
 			$result = $GLOBALS ['TYPO3_DB']->sql_fetch_assoc ( $query );
 			$GLOBALS ['TSFE']->sys_page->versionOL ( "pages", $result );

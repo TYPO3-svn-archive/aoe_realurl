@@ -92,7 +92,7 @@ class tx_aoerealurlpath_pagepath {
 	 */
 	function _id2alias($paramKeyValues) {
 		$pageId = $paramKeyValues['id'];
-		if (!is_numeric($pageId)) {
+		if (!is_numeric($pageId)  && is_object($GLOBALS ['TSFE']->sys_page)) {
 			$pageId = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($pageId );
 		}
 		if ($this->_isCrawlerRun() && $GLOBALS['TSFE']->id == $pageId) {
