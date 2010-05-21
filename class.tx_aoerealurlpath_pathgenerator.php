@@ -97,8 +97,8 @@ class tx_aoerealurlpath_pathgenerator {
 				$pathString = $this->_buildPath ( $this->conf ['segTitleFieldList'], $rootline );
 			}
 		}
-		
-		
+
+
 		return array (
 			'path' => $pathString,
 			'rootPid' => $rootPid,
@@ -146,16 +146,16 @@ class tx_aoerealurlpath_pathgenerator {
 		if ($this->conf ['renderShortcuts']) {
 			return false;
 		} else {
-			
+
 			static $cache = array();
 			$paramhash = intval($id).'_'.intval($langid).'_'.intval($workspace).'_'.intval($reclevel);
-			
+
 			if (isset($cache[$paramhash])) {
 				return $cache[$paramhash];
 			}
-			
+
 			$returnValue = NULL;
-			
+
 			if ($reclevel > 20) {
 				$returnValue =  false;
 			}
@@ -221,7 +221,7 @@ class tx_aoerealurlpath_pathgenerator {
 			} else {
 				$returnValue = false;
 			}
-			
+
 			$cache[$paramhash] = $returnValue;
 			return $returnValue;
 		}
@@ -446,7 +446,7 @@ class tx_aoerealurlpath_pathgenerator {
 	}
 
 	/**
-	 * 
+	 *
 	 *
 	 * @param int $langID
 	 * @param int $workspace
@@ -514,7 +514,7 @@ class tx_aoerealurlpath_pathgenerator {
 	 */
 	function _getPageOverlay($id, $langid = 0) {
 		$relevantLangId = $langid;
-		if ($this->extconfArr ['useLanguagevisibility']) {
+		if ($this->extconfArr ['useLanguagevisibility'] && t3lib_extMgm::isLoaded('languagevisibility')) {
 			require_once (t3lib_extMgm::extPath ( "languagevisibility" ) . 'class.tx_languagevisibility_feservices.php');
 			$relevantLangId = tx_languagevisibility_feservices::getOverlayLanguageIdForElementRecord ( $id, 'pages', $langid );
 		}
