@@ -38,18 +38,27 @@ include_once (t3lib_extMgm::extPath ( 'aoe_realurlpath' ) . 'class.tx_aoerealurl
  * @subpackage aoe_realurlpath
  */
 class tx_aoerealurlpath_hooks_processdatamap {
+	
+	/**
+	 * After database operations 
+	 * 
+	 * @param $status (not used)
+	 * @param string $table
+	 * @param int $id
+	 * @param $fieldArray (not used)
+	 * @param $reference
+	 */
 	function processDatamap_afterDatabaseOperations($status, $table, $id, $fieldArray, &$reference) {
 
 		if ($table == 'pages') {
-			$cache = new tx_aoerealurlpath_cachemgmt ( $GLOBALS ['BE_USER']->workspace, 0 );
-			$cache->markAsDirtyCompletePid ( $id );
+			$cache = new tx_aoerealurlpath_cachemgmt($GLOBALS ['BE_USER']->workspace, 0);
+			$cache->markAsDirtyCompletePid($id);
 		}
 		if ($table == 'pages_language_overlay') {
-
 			$pid = $reference->checkValue_currentRecord ['pid'];
 			if ($pid) {
-				$cache = new tx_aoerealurlpath_cachemgmt ( $GLOBALS ['BE_USER']->workspace, 0 );
-				$cache->markAsDirtyCompletePid ( $pid );
+				$cache = new tx_aoerealurlpath_cachemgmt($GLOBALS ['BE_USER']->workspace, 0);
+				$cache->markAsDirtyCompletePid($pid);
 			}
 		}
 	}
@@ -84,4 +93,5 @@ class tx_aoerealurlpath_hooks_processdatamap {
 	}
 
 }
+
 ?>
