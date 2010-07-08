@@ -26,23 +26,26 @@
  ***************************************************************/
 /**
  *
- * @author	Daniel Pötzinger
+ * @author	Daniel Poetzinger
  * @author	Tolleiv Nietsch
  */
+
 /**
  * TODO:
- -check if internal cache array can improve speed
+ - check if internal cache array can improve speed
  - move oldlinks to redirects
  - check last updatetime of pages
  **/
-include_once (t3lib_extMgm::extPath ( 'aoe_realurlpath' ) . 'class.tx_aoerealurlpath_pathgenerator.php');
+include_once (t3lib_extMgm::extPath('aoe_realurlpath') . 'class.tx_aoerealurlpath_pathgenerator.php');
+
 /**
  *
- * @author	Daniel P�tzinger
+ * @author	Daniel Poetzinger
  * @package realurl
  * @subpackage aoe_realurlpath
  */
 class tx_aoerealurlpath_cachemgmt {
+	
 	//cahce key values
 	var $workspaceId;
 	var $languageId;
@@ -55,9 +58,9 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @var t3lib_DB
 	 */
 	protected $dbObj;
-
-	static $cache = array();
 	
+	static $cache = array();
+
 	/**
 	 * Class constructor (PHP4 style)
 	 * 
@@ -68,9 +71,9 @@ class tx_aoerealurlpath_cachemgmt {
 		$this->workspaceId = $workspace;
 		$this->languageId = $languageid;
 		$this->useUnstrictCacheWhere = FALSE;
-		$confArr = unserialize ( $GLOBALS ['TYPO3_CONF_VARS'] ['EXT'] ['extConf'] ['aoe_realurlpath'] );
-		if(isset($confArr ['defaultCacheTimeOut'])) {
-			$this->setCacheTimeOut ( $confArr ['defaultCacheTimeOut'] );
+		$confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['aoe_realurlpath']);
+		if (isset($confArr['defaultCacheTimeOut'])) {
+			$this->setCacheTimeOut($confArr['defaultCacheTimeOut']);
 		}
 		$this->dbObj = $GLOBALS['TYPO3_DB'];
 	}
@@ -96,7 +99,7 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @param int $time - in secounds
 	 */
 	function setCacheTimeOut($time) {
-		$this->cacheTimeOut = intval ( $time );
+		$this->cacheTimeOut = intval($time);
 	}
 
 	/**
@@ -142,7 +145,7 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return pagid or false
 	 **/
 	function checkCacheWithDecreasingPath($pagePathOrigin, &$keepPath) {
-		return $this->_checkACacheTableWithDecreasingPath ( $pagePathOrigin, $keepPath, FALSE );
+		return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, $keepPath, FALSE);
 	}
 
 	/**
@@ -153,7 +156,7 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return pagid or false
 	 **/
 	function checkHistoryCacheWithDecreasingPath($pagePathOrigin, &$keepPath) {
-		return $this->_checkACacheTableWithDecreasingPath ( $pagePathOrigin, $keepPath, TRUE );
+		return $this->_checkACacheTableWithDecreasingPath($pagePathOrigin, $keepPath, TRUE);
 	}
 
 	/**
@@ -165,19 +168,19 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return int
 	 */
 	function _checkACacheTableWithDecreasingPath($pagePathOrigin, &$keepPath, $inHistoryTable = FALSE) {
-		$sizeOfPath = count ( $pagePathOrigin );
+		$sizeOfPath = count($pagePathOrigin);
 		$pageId = false;
-		for($i = $sizeOfPath; $i > 0; $i --) {
-			if (! $inHistoryTable) {
-				$pageId = $this->_readCacheForPath ( implode ( "/", $pagePathOrigin ) );
+		for($i = $sizeOfPath; $i > 0; $i--) {
+			if (!$inHistoryTable) {
+				$pageId = $this->_readCacheForPath(implode("/", $pagePathOrigin));
 			} else {
-				$pageId = $this->_readHistoryCacheForPath ( implode ( "/", $pagePathOrigin ) );
+				$pageId = $this->_readHistoryCacheForPath(implode("/", $pagePathOrigin));
 			}
 			if ($pageId !== false) {
 				//found something => break;
 				break;
 			} else {
-				array_unshift ( $keepPath, array_pop ( $pagePathOrigin ) );
+				array_unshift($keepPath, array_pop($pagePathOrigin));
 			}
 		}
 		return $pageId;
@@ -191,41 +194,41 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return string unique path in cache
 	 */
 	function storeUniqueInCache($pid, $buildedPath, $disableCollisionDetection = false) {
-		$this->dbObj->sql_query ( 'BEGIN' );
-		if ($this->isInCache ( $pid ) === false) {
-			$this->_checkForCleanupCache ( $pid, $buildedPath );
-				//do cleanup of old cache entries:
+		$this->dbObj->sql_query('BEGIN');
+		if ($this->isInCache($pid) === false) {
+			$this->_checkForCleanupCache($pid, $buildedPath);
+			//do cleanup of old cache entries:
 			$_ignore = $pid;
 			$_workspace = $this->getWorkspaceId();
 			if ($_workspace > 0) {
 				$record = t3lib_BEfunc::getLiveVersionOfRecord('pages', $pid, 'uid');
-				if(!is_array($record)) {
+				if (!is_array($record)) {
 					$record = t3lib_BEfunc::getWorkspaceVersionOfRecord($_workspace, 'pages', $pid, '*');
 				}
-				if(is_array($record)) {
+				if (is_array($record)) {
 					$_ignore = $record['uid'];
 				}
 			}
-
-			if ($this->_readCacheForPath ( $buildedPath , $_ignore) && ! $disableCollisionDetection) {
+			
+			if ($this->_readCacheForPath($buildedPath, $_ignore) && !$disableCollisionDetection) {
 				$buildedPath .= '_' . $pid;
 			}
-				//do insert
-			$data ['tstamp'] = time();
-			$data ['path'] = $buildedPath;
-			$data ['mpvar'] = "";
-			$data ['workspace'] = $this->getWorkspaceId ();
-			$data ['languageid'] = $this->getLanguageId ();
-			$data ['rootpid'] = $this->getRootPid ();
-			$data ['pageid'] = $pid;
-
-			if ($this->dbObj->exec_INSERTquery ( "tx_aoerealurlpath_cache", $data )) {
+			//do insert
+			$data['tstamp'] = time();
+			$data['path'] = $buildedPath;
+			$data['mpvar'] = "";
+			$data['workspace'] = $this->getWorkspaceId();
+			$data['languageid'] = $this->getLanguageId();
+			$data['rootpid'] = $this->getRootPid();
+			$data['pageid'] = $pid;
+			
+			if ($this->dbObj->exec_INSERTquery("tx_aoerealurlpath_cache", $data)) {
 				//TODO ... yeah we saved something in the database - any further problems?
 			} else {
 				//TODO ... d'oh database didn't like use - what's next?
 			}
 		}
-		$this->dbObj->sql_query ( 'COMMIT' );
+		$this->dbObj->sql_query('COMMIT');
 		return $buildedPath;
 	}
 
@@ -235,24 +238,24 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @param string Path
 	 * @return string unique path in cache
 	 **/
-	function _readCacheForPath($pagePath, $ignoreUid=null) {
-
-		if(is_numeric($ignoreUid)) {
-			$where = 'path="' . $pagePath . '" AND pageid != "' . intval($ignoreUid) .'" ';
+	function _readCacheForPath($pagePath, $ignoreUid = null) {
+		
+		if (is_numeric($ignoreUid)) {
+			$where = 'path="' . $pagePath . '" AND pageid != "' . intval($ignoreUid) . '" ';
 		} else {
 			$where = 'path="' . $pagePath . '" ';
 		}
-		$where .= $this->_getAddCacheWhere ( TRUE );
-		if (method_exists ( $this->dbObj, 'exec_SELECTquery_master' )) {
-				// Force select to use master server in t3p_scalable
-			$res = $this->dbObj->exec_SELECTquery_master ( "*", "tx_aoerealurlpath_cache", $where );
+		$where .= $this->_getAddCacheWhere(TRUE);
+		if (method_exists($this->dbObj, 'exec_SELECTquery_master')) {
+			// Force select to use master server in t3p_scalable
+			$res = $this->dbObj->exec_SELECTquery_master("*", "tx_aoerealurlpath_cache", $where);
 		} else {
-			$res = $this->dbObj->exec_SELECTquery ( "*", "tx_aoerealurlpath_cache", $where );
+			$res = $this->dbObj->exec_SELECTquery("*", "tx_aoerealurlpath_cache", $where);
 		}
 		if ($res)
-			$result = $this->dbObj->sql_fetch_assoc ( $res );
-		if ($result ['pageid']) {
-			return $result ['pageid'];
+			$result = $this->dbObj->sql_fetch_assoc($res);
+		if ($result['pageid']) {
+			return $result['pageid'];
 		} else {
 			return false;
 		}
@@ -265,12 +268,12 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return string unique path in cache
 	 **/
 	function _readHistoryCacheForPath($pagePath) {
-		$where = "path=\"" . $pagePath . '"' . $this->_getAddCacheWhere ( TRUE );
-		$res = $this->dbObj->exec_SELECTquery ( "*", "tx_aoerealurlpath_cachehistory", $where );
+		$where = "path=\"" . $pagePath . '"' . $this->_getAddCacheWhere(TRUE);
+		$res = $this->dbObj->exec_SELECTquery("*", "tx_aoerealurlpath_cachehistory", $where);
 		if ($res)
-			$result = $this->dbObj->sql_fetch_assoc ( $res );
-		if ($result ['pageid']) {
-			return $result ['pageid'];
+			$result = $this->dbObj->sql_fetch_assoc($res);
+		if ($result['pageid']) {
+			return $result['pageid'];
 		} else {
 			return false;
 		}
@@ -283,12 +286,12 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return mixed - false or pagepath
 	 */
 	function isInCache($pid) {
-		$row = $this->getCacheRowForPid ( $pid );
-		if (! is_array ( $row )) {
+		$row = $this->getCacheRowForPid($pid);
+		if (!is_array($row)) {
 			return false;
 		} else {
-			if ($this->_isCacheRowStillValid ( $row )) {
-				return $row ['path'];
+			if ($this->_isCacheRowStillValid($row)) {
+				return $row['path'];
 			} else {
 				return false;
 			}
@@ -301,28 +304,28 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return array
 	 */
 	function getCacheRowForPid($pid) {
-
+		
 		$cacheKey = $this->getCacheKey($pid);
 		if (isset($this->cache[$cacheKey]) && is_array($this->cache[$cacheKey])) {
 			return $this->cache[$cacheKey];
 		}
-
+		
 		$row = false;
-		$where = 'pageid=' . intval ( $pid ) . $this->_getAddCacheWhere ();
-		if (method_exists ( $this->dbObj, 'exec_SELECTquery_master' )) {
-				// Force select to use master server in t3p_scalable
-			$query = $this->dbObj->exec_SELECTquery_master ( '*', 'tx_aoerealurlpath_cache', $where );
+		$where = 'pageid=' . intval($pid) . $this->_getAddCacheWhere();
+		if (method_exists($this->dbObj, 'exec_SELECTquery_master')) {
+			// Force select to use master server in t3p_scalable
+			$query = $this->dbObj->exec_SELECTquery_master('*', 'tx_aoerealurlpath_cache', $where);
 		} else {
-			$query = $this->dbObj->exec_SELECTquery ( '*', 'tx_aoerealurlpath_cache', $where );
+			$query = $this->dbObj->exec_SELECTquery('*', 'tx_aoerealurlpath_cache', $where);
 		}
 		if ($query) {
-			$row = $this->dbObj->sql_fetch_assoc ( $query );
+			$row = $this->dbObj->sql_fetch_assoc($query);
 		}
-
-		if(is_array($row)) {
+		
+		if (is_array($row)) {
 			$this->cache[$cacheKey] = $row;
 		}
-
+		
 		return $row;
 	}
 
@@ -332,11 +335,11 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return array
 	 */
 	function getCacheHistoryRowsForPid($pid) {
-		$rows = array ();
-		$where = "pageid=" . intval ( $pid ) . $this->_getAddCacheWhere ();
-		$query = $this->dbObj->exec_SELECTquery ( "*", "tx_aoerealurlpath_cachehistory", $where );
-		while ( $row = $this->dbObj->sql_fetch_assoc ( $query ) ) {
-			$rows [] = $row;
+		$rows = array();
+		$where = "pageid=" . intval($pid) . $this->_getAddCacheWhere();
+		$query = $this->dbObj->exec_SELECTquery("*", "tx_aoerealurlpath_cachehistory", $where);
+		while ( $row = $this->dbObj->sql_fetch_assoc($query) ) {
+			$rows[] = $row;
 		}
 		return $rows;
 	}
@@ -348,14 +351,14 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return void
 	 */
 	function _checkForCleanupCache($pid, $newPath) {
-		$row = $this->getCacheRowForPid ( $pid );
-		if (! is_array ( $row )) {
+		$row = $this->getCacheRowForPid($pid);
+		if (!is_array($row)) {
 			return false;
-		} elseif (! $this->_isCacheRowStillValid ( $row )) {
-			if ($newPath != $row ['path']) {
-				$this->insertInCacheHistory ( $row );
+		} elseif (!$this->_isCacheRowStillValid($row)) {
+			if ($newPath != $row['path']) {
+				$this->insertInCacheHistory($row);
 			}
-			$this->_delCacheForPid ( $row ['pageid'] );
+			$this->_delCacheForPid($row['pageid']);
 		}
 	}
 
@@ -365,9 +368,9 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return boolean
 	 */
 	function _isCacheRowStillValid($row) {
-		if ($row ['dirty'] == 1) {
+		if ($row['dirty'] == 1) {
 			return false;
-		} elseif (($this->cacheTimeOut > 0) && (($row ['tstamp'] + $this->cacheTimeOut) < time())) {
+		} elseif (($this->cacheTimeOut > 0) && (($row['tstamp'] + $this->cacheTimeOut) < time())) {
 			return false;
 		} else {
 			return true;
@@ -380,11 +383,9 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return void
 	 */
 	function _delCacheForPid($pid) {
-
 		$this->cache[$this->getCacheKey($pid)] = false;
-
-		$where = "pageid=" . intval ( $pid ) . $this->_getAddCacheWhere ();
-		$this->dbObj->exec_DELETEquery ( "tx_aoerealurlpath_cache", $where );
+		$where = "pageid=" . intval($pid) . $this->_getAddCacheWhere();
+		$this->dbObj->exec_DELETEquery("tx_aoerealurlpath_cache", $where);
 	}
 
 	/**
@@ -393,8 +394,8 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return void
 	 */
 	function delCacheForCompletePid($pid) {
-		$where = "pageid=" . intval ( $pid ) . ' AND workspace=' . intval ( $this->getWorkspaceId () );
-		$this->dbObj->exec_DELETEquery ( "tx_aoerealurlpath_cache", $where );
+		$where = "pageid=" . intval($pid) . ' AND workspace=' . intval($this->getWorkspaceId());
+		$this->dbObj->exec_DELETEquery("tx_aoerealurlpath_cache", $where);
 	}
 
 	/**
@@ -403,10 +404,8 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return void
 	 */
 	function markAsDirtyCompletePid($pid) {
-		$where = "pageid=" . intval ( $pid ) . ' AND workspace=' . intval ( $this->getWorkspaceId () );
-		$this->dbObj->exec_UPDATEquery ( "tx_aoerealurlpath_cache", $where, array (
-			'dirty' => 1
-		) );
+		$where = "pageid=" . intval($pid) . ' AND workspace=' . intval($this->getWorkspaceId());
+		$this->dbObj->exec_UPDATEquery("tx_aoerealurlpath_cache", $where, array('dirty' => 1));
 	}
 
 	/**
@@ -415,9 +414,9 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return void
 	 */
 	function insertInCacheHistory($row) {
-		unset ( $row ['dirty'] );
-		$row ['tstamp'] = time();
-		$this->dbObj->exec_INSERTquery ( "tx_aoerealurlpath_cachehistory", $row );
+		unset($row['dirty']);
+		$row['tstamp'] = time();
+		$this->dbObj->exec_INSERTquery("tx_aoerealurlpath_cachehistory", $row);
 	}
 
 	/**
@@ -425,8 +424,8 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return void
 	 */
 	function clearAllCache() {
-		$this->dbObj->exec_DELETEquery ( "tx_aoerealurlpath_cache", '1=1' );
-		$this->dbObj->exec_DELETEquery ( "tx_aoerealurlpath_cachehistory", '1=1' );
+		$this->dbObj->exec_DELETEquery("tx_aoerealurlpath_cache", '1=1');
+		$this->dbObj->exec_DELETEquery("tx_aoerealurlpath_cachehistory", '1=1');
 	}
 
 	/**
@@ -434,7 +433,7 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return void
 	 */
 	function clearAllCacheHistory() {
-		$this->dbObj->exec_DELETEquery ( "tx_aoerealurlpath_cachehistory", '1=1' );
+		$this->dbObj->exec_DELETEquery("tx_aoerealurlpath_cachehistory", '1=1');
 	}
 
 	/**
@@ -448,16 +447,22 @@ class tx_aoerealurlpath_cachemgmt {
 			//without the additional keys, thats for compatibility reasons
 			$where = '';
 		} else {
-			$where = ' AND workspace IN (0,' . intval ( $this->getWorkspaceId () ) . ') AND languageid=' . intval ( $this->getLanguageId () );
+			$where = ' AND workspace IN (0,' . intval($this->getWorkspaceId()) . ') AND languageid=' . intval($this->getLanguageId());
 		}
 		if ($withRootPidCheck) {
-			$where .= ' AND rootpid=' . intval ( $this->getRootPid () );
+			$where .= ' AND rootpid=' . intval($this->getRootPid());
 		}
 		return $where;
 	}
 
+	/**
+	 * Get cache key
+	 * 
+	 * @param int $pid
+	 */
 	protected function getCacheKey($pid) {
-		return implode('-', array($pid, $this->getRootPid(),  $this->getWorkspaceId(), $this->getLanguageId()));
+		return implode('-', array($pid, $this->getRootPid(), $this->getWorkspaceId(), $this->getLanguageId()));
 	}
 }
+
 ?>
