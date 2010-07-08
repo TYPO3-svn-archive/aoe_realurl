@@ -214,7 +214,7 @@ class tx_aoerealurlpath_cachemgmt {
 				$buildedPath .= '_' . $pid;
 			}
 			//do insert
-			$data['tstamp'] = time();
+			$data['tstamp'] = $GLOBALS['EXEC_TIME'];
 			$data['path'] = $buildedPath;
 			$data['mpvar'] = "";
 			$data['workspace'] = $this->getWorkspaceId();
@@ -370,7 +370,7 @@ class tx_aoerealurlpath_cachemgmt {
 	function _isCacheRowStillValid($row) {
 		if ($row['dirty'] == 1) {
 			return false;
-		} elseif (($this->cacheTimeOut > 0) && (($row['tstamp'] + $this->cacheTimeOut) < time())) {
+		} elseif (($this->cacheTimeOut > 0) && (($row['tstamp'] + $this->cacheTimeOut) < $GLOBALS['EXEC_TIME'])) {
 			return false;
 		} else {
 			return true;
@@ -415,7 +415,7 @@ class tx_aoerealurlpath_cachemgmt {
 	 */
 	function insertInCacheHistory($row) {
 		unset($row['dirty']);
-		$row['tstamp'] = time();
+		$row['tstamp'] = $GLOBALS['EXEC_TIME'];
 		$this->dbObj->exec_INSERTquery("tx_aoerealurlpath_cachehistory", $row);
 	}
 
