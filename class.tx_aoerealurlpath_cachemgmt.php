@@ -138,7 +138,7 @@ class tx_aoerealurlpath_cachemgmt {
 	}
 
 	/**
-	 * important function: checks the path in the cache: if not found the check against cache is repeted without the last pathpart
+	 * important function: checks the path in the cache: if not found the check against cache is repeated without the last pathpart
 	 *
 	 * @param array  $pagePathOrigin  the path which should be searched in cache
 	 * @param &$keepPath  -> passed by reference -> array with the n last pathparts which could not retrieved from cache -> they are propably preVars from translated parameters (like tt_news is etc...)	 *
