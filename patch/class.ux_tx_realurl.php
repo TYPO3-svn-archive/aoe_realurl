@@ -336,7 +336,7 @@ class ux_tx_realurl extends tx_realurl {
 	 * @return	void
 	 * @see decodeSpURL_doDecode()
 	 */
-	protected function decodeSpURL_checkRedirects($speakingURIpath) {
+	public function decodeSpURL_checkRedirects($speakingURIpath) {
 		$speakingURIpath = trim($speakingURIpath);
 
 		if (isset($this->extConf['redirects'][$speakingURIpath])) {
