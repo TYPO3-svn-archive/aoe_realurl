@@ -93,7 +93,7 @@ class tx_aoerealurlpath_hooks_crawler {
 			$params['pObj']->applicationData['tx_crawler']['log'][] = 'Force page generation (aoe_realurlpath - rebuild)';
 
 				// force fresh page generation without using cache data 
-			$params['disableAcquireCacheData'] = TRUE;
+			$tsfe->all = '';
 		}
 	}
 }
