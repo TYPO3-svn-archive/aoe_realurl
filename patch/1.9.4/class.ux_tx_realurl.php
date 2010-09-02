@@ -474,6 +474,14 @@ class ux_tx_realurl extends tx_realurl {
 
 
 
+	/**
+	 * Checks if rootpage_id is set and if not, sets it
+	 *
+	 * @return	void
+	 */
+	protected function adjustRootPageId() {
+		//~ // we do nothing since auto-detection is shit
+	}
 
 
 
