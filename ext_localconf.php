@@ -10,9 +10,9 @@ if ($confArr['applyPatch'] == 1) {
 		return substr($EM_CONF[$_EXTKEY]['version'].'       ', 0, strlen($EM_CONF[$_EXTKEY]['version']));
 	}
 
-	if (version_compare(aoe_get_version_from_conf('realurl'), '1.5.3', '=<')) {	
+	if (version_compare(aoe_get_version_from_conf('realurl'), '1.5.3', '<=')) {
 		$GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl.php'] = t3lib_extMgm::extPath('aoe_realurlpath') . 'patch/1.5.3/class.ux_tx_realurl.php';
-	} elseif (version_compare(aoe_get_version_from_conf('realurl'), '1.9.4', '=<')) {
+	} elseif (version_compare(aoe_get_version_from_conf('realurl'), '1.9.4', '<=')) {
 		$GLOBALS['TYPO3_CONF_VARS'][TYPO3_MODE]['XCLASS']['ext/realurl/class.tx_realurl.php'] = t3lib_extMgm::extPath('aoe_realurlpath') . 'patch/1.9.4/class.ux_tx_realurl.php';
 	}
 }
