@@ -157,21 +157,53 @@ class ux_tx_realurl extends tx_realurl {
 		// Parse current URL into main parts:
 		$uParts = parse_url($params['LD']['totalURL']);
 
-		// Look in memory cache first:
-		$newUrl = $this->encodeSpURL_encodeCache($uParts['query'], $internalExtras);
+		// Look in memory cache first
+		$urlData = $this->hostConfigured . ' | ' . $uParts['query'];
+		$newUrl = $this->encodeSpURL_encodeCache($urlData, $internalExtras);
 		if (!$newUrl) {
-
-			// Encode URL:
+			// Encode URL
 			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache'], $params['LD']['totalURL']);
 
-			// Set new URL in cache:
-			$this->encodeSpURL_encodeCache($uParts['query'], $internalExtras, $newUrl);
+			// Set new URL in cache
+			$this->encodeSpURL_encodeCache($urlData, $internalExtras, $newUrl);
 		}
+		unset($urlData);
 
 		// Adding any anchor there might be:
 		if ($uParts['fragment']) {
 			$newUrl .= '#' . $uParts['fragment'];
 		}
+
+		// Reapply config.absRefPrefix if necessary
+		if ((!isset($this->extConf['init']['reapplyAbsRefPrefix']) || $this->extConf['init']['reapplyAbsRefPrefix']) && $GLOBALS['TSFE']->absRefPrefix) {
+			// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
+			if (substr($GLOBALS['TSFE']->absRefPrefix, -1, 1) == '/' && substr($newUrl, 0, 1) == '/') {
+				$newUrl = substr($newUrl, 1);
+			}
+			$newUrl = $GLOBALS['TSFE']->absRefPrefix . $newUrl;
+		}
+
+		// Set prepending of URL (e.g. hostname) which will be processed by typoLink_PostProc hook in tslib_content:
+		if (isset($adjustedConfiguration['urlPrepend']) && !isset($this->urlPrepend[$newUrl])) {
+			$urlPrepend = $adjustedConfiguration['urlPrepend'];
+			if (substr($urlPrepend, -1) == '/') {
+				$urlPrepend = substr($urlPrepend, 0, -1);
+			}
+			$this->urlPrepend[$newUrl] = $urlPrepend;
+		}
+
+		// Call hooks
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => &$this,
+					'params' => $params,
+					'URL' => &$newUrl,
+				);
+				t3lib_div::callUserFunction($userFunc, $hookParams, $this);
+			}
+		}
+
 		// Setting the encoded URL in the LD key of the params array - that value is passed by reference and thus returned to the linkData function!
 		$params['LD']['totalURL'] = $newUrl;
 	}
@@ -310,8 +342,12 @@ class ux_tx_realurl extends tx_realurl {
 		// Cached info:
 		$cachedInfo = array();
 
-		// Split URL + resolve parts of path:
+		// Convert URL to segments
 		$pathParts = explode('/', $speakingURIpath);
+		array_walk($pathParts, create_function('&$value', '$value = rawurldecode($value);'));
+
+		// Strip/process file name or extension first
+		$file_GET_VARS = $this->decodeSpURL_decodeFileName($pathParts);
 
 			//clear former replaced empty values
 		if ($this->extConf ['init'] ['postReplaceEmptyValues'] == 1) {
@@ -360,9 +396,6 @@ class ux_tx_realurl extends tx_realurl {
 			$this->decodeSpURL_throw404('"' . $speakingURIpath . '" could not be found, closest page matching is ' . substr(implode('/', $this->dirParts), 0, -strlen(implode('/', $pathParts))) . '');
 		}
 
-		// Setting filename:
-		$file_GET_VARS = $this->decodeSpURL_fileName($this->filePart);
-
 		// Merge Get vars together:
 		$cachedInfo['GET_VARS'] = array();
 		if (is_array($pre_GET_VARS))
@@ -387,6 +420,8 @@ class ux_tx_realurl extends tx_realurl {
 		// Return information found:
 		return $cachedInfo;
 	}
+
+
 
 	/**
 	 * Looks up an ID value (integer) in lookup-table based on input alias value.
@@ -449,9 +484,8 @@ class ux_tx_realurl extends tx_realurl {
 
 }
 
-
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.ux_tx_realurl.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.ux_tx_realurl.php']);
+if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/aoe_realurl/patch/1.9.4/class.ux_tx_realurl.php']) {
+	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/aoe_realurl/patch/1.9.4/class.ux_tx_realurl.php']);
 }
 
 ?>
