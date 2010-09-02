@@ -39,37 +39,7 @@ class ux_tx_realurl extends tx_realurl {
 	function getRetrievedPreGetVar($key) {
 		return $this->pre_GET_VARS [$key];
 	}
-	
-	public function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE) {
-		
-		static $cache = array();
-		$paramhash = md5(serialize($cfg).serialize($aliasValue).serialize($onlyNonExpired));
-		
-		if (isset($cache[$paramhash])) {
-			return $cache[$paramhash];
-		}
-		
-		$returnValue = parent::lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired);
 
-		$cache[$paramhash] = $returnValue;
-		return $returnValue;
-	}
-	
-	public function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '') {
-		static $cache = array();
-		$paramhash = md5(serialize($cfg).serialize($idValue).serialize($lang).serialize($aliasValue));
-		
-		if (isset($cache[$paramhash])) {
-			return $cache[$paramhash];
-		}
-		
-		$returnValue = parent::lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue);
-
-		$cache[$paramhash] = $returnValue;
-		return $returnValue;
-
-	}
-	
 	function _checkForExternalPageAndGetTarget($id) {
 		
 		if (!is_object($GLOBALS ['TSFE']->sys_page)) {
@@ -132,8 +102,11 @@ class ux_tx_realurl extends tx_realurl {
 	 * @return	void
 	 */
 	function encodeSpURL(&$params, &$ref) {
-		if ($this->enableDevLog) {
-			t3lib_div::devLog('Entering encodeSpURL for ' . $params['LD']['totalURL'], 'realurl');
+		$this->devLog('Entering encodeSpURL for ' . $params['LD']['totalURL']);
+
+		if ($this->isInWorkspace()) {
+			$this->devLog('Workspace detected. Not doing anything!');
+			return;
 		}
 
 		if (!$params['TCEmainHook']) {
@@ -156,9 +129,7 @@ class ux_tx_realurl extends tx_realurl {
 			return;
 		}
 
-		if ($this->enableDevLog) {
-			t3lib_div::devLog('Starting URL encode', 'realurl', -1);
-		}
+		$this->devLog('Starting URL encode');
 
 		// Initializing config / request URL:
 		$this->setConfig();
@@ -186,21 +157,53 @@ class ux_tx_realurl extends tx_realurl {
 		// Parse current URL into main parts:
 		$uParts = parse_url($params['LD']['totalURL']);
 
-		// Look in memory cache first:
-		$newUrl = $this->encodeSpURL_encodeCache($uParts['query'], $internalExtras);
+		// Look in memory cache first
+		$urlData = $this->hostConfigured . ' | ' . $uParts['query'];
+		$newUrl = $this->encodeSpURL_encodeCache($urlData, $internalExtras);
 		if (!$newUrl) {
-
-			// Encode URL:
+			// Encode URL
 			$newUrl = $this->encodeSpURL_doEncode($uParts['query'], $this->extConf['init']['enableCHashCache'], $params['LD']['totalURL']);
 
-			// Set new URL in cache:
-			$this->encodeSpURL_encodeCache($uParts['query'], $internalExtras, $newUrl);
+			// Set new URL in cache
+			$this->encodeSpURL_encodeCache($urlData, $internalExtras, $newUrl);
 		}
+		unset($urlData);
 
 		// Adding any anchor there might be:
 		if ($uParts['fragment']) {
 			$newUrl .= '#' . $uParts['fragment'];
 		}
+
+		// Reapply config.absRefPrefix if necessary
+		if ((!isset($this->extConf['init']['reapplyAbsRefPrefix']) || $this->extConf['init']['reapplyAbsRefPrefix']) && $GLOBALS['TSFE']->absRefPrefix) {
+			// Prevent // in case of absRefPrefix ending with / and emptyUrlReturnValue=/
+			if (substr($GLOBALS['TSFE']->absRefPrefix, -1, 1) == '/' && substr($newUrl, 0, 1) == '/') {
+				$newUrl = substr($newUrl, 1);
+			}
+			$newUrl = $GLOBALS['TSFE']->absRefPrefix . $newUrl;
+		}
+
+		// Set prepending of URL (e.g. hostname) which will be processed by typoLink_PostProc hook in tslib_content:
+		if (isset($adjustedConfiguration['urlPrepend']) && !isset($this->urlPrepend[$newUrl])) {
+			$urlPrepend = $adjustedConfiguration['urlPrepend'];
+			if (substr($urlPrepend, -1) == '/') {
+				$urlPrepend = substr($urlPrepend, 0, -1);
+			}
+			$this->urlPrepend[$newUrl] = $urlPrepend;
+		}
+
+		// Call hooks
+		if (is_array($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'])) {
+			foreach($GLOBALS['TYPO3_CONF_VARS']['EXTCONF']['realurl']['encodeSpURL_postProc'] as $userFunc) {
+				$hookParams = array(
+					'pObj' => &$this,
+					'params' => $params,
+					'URL' => &$newUrl,
+				);
+				t3lib_div::callUserFunction($userFunc, $hookParams, $this);
+			}
+		}
+
 		// Setting the encoded URL in the LD key of the params array - that value is passed by reference and thus returned to the linkData function!
 		$params['LD']['totalURL'] = $newUrl;
 	}
@@ -214,10 +217,14 @@ class ux_tx_realurl extends tx_realurl {
 	 * @return	string		Output Speaking URL (with as many GET parameters encoded into the URL as possible).
 	 * @see encodeSpURL()
 	 */
-	function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '') {
+	protected function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '') {
+
+		$this->cHashParameters = array();
+		$this->rebuildCHash = false;
 
 		// Extract all GET parameters into an ARRAY:
 		$paramKeyValues = array();
+		$additionalVariables = array();
 		$GETparams = explode('&', $inputQuery);
 		foreach ($GETparams as $paramAndValue) {
 			list($p, $v) = explode('=', $paramAndValue, 2);
@@ -233,102 +240,18 @@ class ux_tx_realurl extends tx_realurl {
 		return parent::encodeSpURL_doEncode ( $inputQuery, $cHashCache, $origUrl );
 	}
 
-	/**
-	 * Decodes a speaking URL path into an array of GET parameters and a page id.
-	 *
-	 * @param	string		Speaking URL path (after the "root" path of the website!) but without query parameters
-	 * @param	boolean		If cHash caching is enabled or not.
-	 * @return	array		Array with id and GET parameters.
-	 * @see decodeSpURL()
-	 */
-	function decodeSpURL_doDecode($speakingURIpath, $cHashCache = FALSE) {
 
-		// Cached info:
-		$cachedInfo = array();
 
-		// Split URL + resolve parts of path:
-		$pathParts = explode('/', $speakingURIpath);
 
-			//clear former replaced empty values
-		if ($this->extConf ['init'] ['postReplaceEmptyValues'] == 1) {
-			$emptyPathSegmentReplaceValue = ($this->extConf ['init'] ['emptyValuesReplacer']) ? $this->extConf ['init'] ['emptyValuesReplacer'] : $this->emptyReplacerDefaultValue;
-			foreach ( $pathParts as $k => $v ) {
-				if ($v == $emptyPathSegmentReplaceValue) {
-					$pathParts [$k] = '';
-				}
-			}
-		}
 
-		$this->filePart = array_pop($pathParts);
 
-		// Checking default HTML name:
-		if (strlen($this->filePart) && ($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] || $this->extConf['fileName']['acceptHTMLsuffix']) && !isset($this->extConf['fileName']['index'][$this->filePart])) {
-			$suffix = preg_quote($this->isString($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'], 'defaultToHTMLsuffixOnPrev') ? $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] : '.html', '/');
-			if ($this->isString($this->extConf['fileName']['acceptHTMLsuffix'], 'acceptHTMLsuffix')) {
-				$suffix = '(' . $suffix . '|' . preg_quote($this->extConf['fileName']['acceptHTMLsuffix'], '/') . ')';
-			}
-			$pathParts[] = preg_replace('/' . $suffix . '$/', '', $this->filePart);
-			$this->filePart = '';
-		}
 
-		// Setting original dir-parts:
-		$this->dirParts = $pathParts;
-
-		// Setting "preVars":
-		$pre_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $this->extConf['preVars']);
-
-			// danielp: make preVars accessible
-		$this->pre_GET_VARS = $pre_GET_VARS;
-
-		// Setting page id:
-		list($cachedInfo['id'], $id_GET_VARS, $cachedInfo['rootpage_id']) = $this->decodeSpURL_idFromPath($pathParts);
-
-		// Fixed Post-vars:
-		$fixedPostVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id'], 'fixedPostVars');
-		$fixedPost_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $fixedPostVarSetCfg);
-
-		// Setting "postVarSets":
-		$postVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id']);
-		$post_GET_VARS = $this->decodeSpURL_settingPostVarSets($pathParts, $postVarSetCfg);
-
-		// Looking for remaining parts:
-		if (count($pathParts)) {
-			$this->decodeSpURL_throw404('"' . $speakingURIpath . '" could not be found, closest page matching is ' . substr(implode('/', $this->dirParts), 0, -strlen(implode('/', $pathParts))) . '');
-		}
-
-		// Setting filename:
-		$file_GET_VARS = $this->decodeSpURL_fileName($this->filePart);
-
-		// Merge Get vars together:
-		$cachedInfo['GET_VARS'] = array();
-		if (is_array($pre_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $pre_GET_VARS);
-		if (is_array($id_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $id_GET_VARS);
-		if (is_array($fixedPost_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $fixedPost_GET_VARS);
-		if (is_array($post_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $post_GET_VARS);
-		if (is_array($file_GET_VARS))
-			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $file_GET_VARS);
-
-		// cHash handling:
-		if ($cHashCache) {
-			$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
-			if ($cHash_value) {
-				$cachedInfo['GET_VARS']['cHash'] = $cHash_value;
-			}
-		}
-
-		// Return information found:
-		return $cachedInfo;
-	}
-	
-	
-	
 	/**
 	 * Overwriting original method to enable redirection to typolink parameters
 	 * 
+	*/
+	
+	/**
 	 * Look for redirect configuration.
 	 * If the input path is found as key in $this->extConf['redirects'] this method redirects to the URL found as value
 	 *
@@ -405,12 +328,172 @@ class ux_tx_realurl extends tx_realurl {
 			exit();
 		}
 	}
-	
+
+	/**
+	 * Decodes a speaking URL path into an array of GET parameters and a page id.
+	 *
+	 * @param	string		Speaking URL path (after the "root" path of the website!) but without query parameters
+	 * @param	boolean		If cHash caching is enabled or not.
+	 * @return	array		Array with id and GET parameters.
+	 * @see decodeSpURL()
+	 */
+	protected function decodeSpURL_doDecode($speakingURIpath, $cHashCache = FALSE) {
+
+		// Cached info:
+		$cachedInfo = array();
+
+		// Convert URL to segments
+		$pathParts = explode('/', $speakingURIpath);
+		array_walk($pathParts, create_function('&$value', '$value = rawurldecode($value);'));
+
+		// Strip/process file name or extension first
+		$file_GET_VARS = $this->decodeSpURL_decodeFileName($pathParts);
+
+			//clear former replaced empty values
+		if ($this->extConf ['init'] ['postReplaceEmptyValues'] == 1) {
+			$emptyPathSegmentReplaceValue = ($this->extConf ['init'] ['emptyValuesReplacer']) ? $this->extConf ['init'] ['emptyValuesReplacer'] : $this->emptyReplacerDefaultValue;
+			foreach ( $pathParts as $k => $v ) {
+				if ($v == $emptyPathSegmentReplaceValue) {
+					$pathParts [$k] = '';
+				}
+			}
+		}
+
+		$this->filePart = array_pop($pathParts);
+
+		// Checking default HTML name:
+		if (strlen($this->filePart) && ($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] || $this->extConf['fileName']['acceptHTMLsuffix']) && !isset($this->extConf['fileName']['index'][$this->filePart])) {
+			$suffix = preg_quote($this->isString($this->extConf['fileName']['defaultToHTMLsuffixOnPrev'], 'defaultToHTMLsuffixOnPrev') ? $this->extConf['fileName']['defaultToHTMLsuffixOnPrev'] : '.html', '/');
+			if ($this->isString($this->extConf['fileName']['acceptHTMLsuffix'], 'acceptHTMLsuffix')) {
+				$suffix = '(' . $suffix . '|' . preg_quote($this->extConf['fileName']['acceptHTMLsuffix'], '/') . ')';
+			}
+			$pathParts[] = preg_replace('/' . $suffix . '$/', '', $this->filePart);
+			$this->filePart = '';
+		}
+
+		// Setting original dir-parts:
+		$this->dirParts = $pathParts;
+
+		// Setting "preVars":
+		$pre_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $this->extConf['preVars']);
+
+			// danielp: make preVars accessible
+		$this->pre_GET_VARS = $pre_GET_VARS;
+
+		// Setting page id:
+		list($cachedInfo['id'], $id_GET_VARS, $cachedInfo['rootpage_id']) = $this->decodeSpURL_idFromPath($pathParts);
+
+		// Fixed Post-vars:
+		$fixedPostVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id'], 'fixedPostVars');
+		$fixedPost_GET_VARS = $this->decodeSpURL_settingPreVars($pathParts, $fixedPostVarSetCfg);
+
+		// Setting "postVarSets":
+		$postVarSetCfg = $this->getPostVarSetConfig($cachedInfo['id']);
+		$post_GET_VARS = $this->decodeSpURL_settingPostVarSets($pathParts, $postVarSetCfg);
+
+		// Looking for remaining parts:
+		if (count($pathParts)) {
+			$this->decodeSpURL_throw404('"' . $speakingURIpath . '" could not be found, closest page matching is ' . substr(implode('/', $this->dirParts), 0, -strlen(implode('/', $pathParts))) . '');
+		}
+
+		// Merge Get vars together:
+		$cachedInfo['GET_VARS'] = array();
+		if (is_array($pre_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $pre_GET_VARS);
+		if (is_array($id_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $id_GET_VARS);
+		if (is_array($fixedPost_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $fixedPost_GET_VARS);
+		if (is_array($post_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $post_GET_VARS);
+		if (is_array($file_GET_VARS))
+			$cachedInfo['GET_VARS'] = t3lib_div::array_merge_recursive_overrule($cachedInfo['GET_VARS'], $file_GET_VARS);
+
+		// cHash handling:
+		if ($cHashCache) {
+			$cHash_value = $this->decodeSpURL_cHashCache($speakingURIpath);
+			if ($cHash_value) {
+				$cachedInfo['GET_VARS']['cHash'] = $cHash_value;
+			}
+		}
+
+		// Return information found:
+		return $cachedInfo;
+	}
+
+
+
+	/**
+	 * Looks up an ID value (integer) in lookup-table based on input alias value.
+	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
+	 * In the lookup table 'tx_realurl_uniqalias' the field "value_alias" should be unique (per combination of field_alias+field_id+tablename)! However the "value_id" field doesn't have to; that is a feature which allows more aliases to point to the same id. The alias selected for converting id to alias will be the first inserted at the moment. This might be more intelligent in the future, having an order column which can be controlled from the backend for instance!
+	 *
+	 * @param	array		Configuration array
+	 * @param	string		Alias value to convert to ID
+	 * @param	boolean		<code>true</code> if only non-expiring record should be looked up
+	 * @return	integer		ID integer. If none is found: false
+	 * @see lookUpTranslation(), lookUp_idToUniqAlias()
+	 */
+	protected function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE) {
+		
+		static $cache = array();
+		$paramhash = md5(serialize($cfg).serialize($aliasValue).serialize($onlyNonExpired));
+		
+		if (isset($cache[$paramhash])) {
+			return $cache[$paramhash];
+		}
+		
+		$returnValue = parent::lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired);
+
+		$cache[$paramhash] = $returnValue;
+		return $returnValue;
+	}
+
+	/**
+	 * Looks up a alias string in lookup-table based on input ID value (integer)
+	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
+	 *
+	 * @param	array		Configuration array
+	 * @param	string		ID value to convert to alias value
+	 * @param	integer		sys_language_uid to use for lookup
+	 * @param	string		Optional alias value to limit search to
+	 * @return	string		Alias string. If none is found: false
+	 * @see lookUpTranslation(), lookUp_uniqAliasToId()
+	 */
+	protected function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '') {
+		static $cache = array();
+		$paramhash = md5(serialize($cfg).serialize($idValue).serialize($lang).serialize($aliasValue));
+		
+		if (isset($cache[$paramhash])) {
+			return $cache[$paramhash];
+		}
+		$returnValue = parent::lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue);
+		$cache[$paramhash] = $returnValue;
+		return $returnValue;
+	}
+
+
+
+	/**
+	 * Checks if rootpage_id is set and if not, sets it
+	 *
+	 * @return	void
+	 */
+	protected function adjustRootPageId() {
+		//~ // we do nothing since auto-detection is shit
+	}
+
+
+
+
+
+
+
+
 }
 
-
-if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.ux_tx_realurl.php']) {
-	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/realurl/class.ux_tx_realurl.php']);
+if (defined('TYPO3_MODE') && $TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/aoe_realurl/patch/1.9.4/class.ux_tx_realurl.php']) {
+	include_once ($TYPO3_CONF_VARS[TYPO3_MODE]['XCLASS']['ext/aoe_realurl/patch/1.9.4/class.ux_tx_realurl.php']);
 }
 
 ?>
