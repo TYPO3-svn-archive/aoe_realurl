@@ -40,7 +40,7 @@ class ux_tx_realurl extends tx_realurl {
 		return $this->pre_GET_VARS [$key];
 	}
 	
-	protected function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE) {
+	function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE) {
 		
 		static $cache = array();
 		$paramhash = md5(serialize($cfg).serialize($aliasValue).serialize($onlyNonExpired));
@@ -55,7 +55,7 @@ class ux_tx_realurl extends tx_realurl {
 		return $returnValue;
 	}
 	
-	protected function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '') {
+	function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '') {
 		static $cache = array();
 		$paramhash = md5(serialize($cfg).serialize($idValue).serialize($lang).serialize($aliasValue));
 		
