@@ -39,37 +39,7 @@ class ux_tx_realurl extends tx_realurl {
 	function getRetrievedPreGetVar($key) {
 		return $this->pre_GET_VARS [$key];
 	}
-	
-	public function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE) {
-		
-		static $cache = array();
-		$paramhash = md5(serialize($cfg).serialize($aliasValue).serialize($onlyNonExpired));
-		
-		if (isset($cache[$paramhash])) {
-			return $cache[$paramhash];
-		}
-		
-		$returnValue = parent::lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired);
 
-		$cache[$paramhash] = $returnValue;
-		return $returnValue;
-	}
-	
-	public function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '') {
-		static $cache = array();
-		$paramhash = md5(serialize($cfg).serialize($idValue).serialize($lang).serialize($aliasValue));
-		
-		if (isset($cache[$paramhash])) {
-			return $cache[$paramhash];
-		}
-		
-		$returnValue = parent::lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue);
-
-		$cache[$paramhash] = $returnValue;
-		return $returnValue;
-
-	}
-	
 	function _checkForExternalPageAndGetTarget($id) {
 		
 		if (!is_object($GLOBALS ['TSFE']->sys_page)) {
@@ -132,8 +102,11 @@ class ux_tx_realurl extends tx_realurl {
 	 * @return	void
 	 */
 	function encodeSpURL(&$params, &$ref) {
-		if ($this->enableDevLog) {
-			t3lib_div::devLog('Entering encodeSpURL for ' . $params['LD']['totalURL'], 'realurl');
+		$this->devLog('Entering encodeSpURL for ' . $params['LD']['totalURL']);
+
+		if ($this->isInWorkspace()) {
+			$this->devLog('Workspace detected. Not doing anything!');
+			return;
 		}
 
 		if (!$params['TCEmainHook']) {
@@ -156,9 +129,7 @@ class ux_tx_realurl extends tx_realurl {
 			return;
 		}
 
-		if ($this->enableDevLog) {
-			t3lib_div::devLog('Starting URL encode', 'realurl', -1);
-		}
+		$this->devLog('Starting URL encode');
 
 		// Initializing config / request URL:
 		$this->setConfig();
@@ -214,10 +185,14 @@ class ux_tx_realurl extends tx_realurl {
 	 * @return	string		Output Speaking URL (with as many GET parameters encoded into the URL as possible).
 	 * @see encodeSpURL()
 	 */
-	function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '') {
+	protected function encodeSpURL_doEncode($inputQuery, $cHashCache = FALSE, $origUrl = '') {
+
+		$this->cHashParameters = array();
+		$this->rebuildCHash = false;
 
 		// Extract all GET parameters into an ARRAY:
 		$paramKeyValues = array();
+		$additionalVariables = array();
 		$GETparams = explode('&', $inputQuery);
 		foreach ($GETparams as $paramAndValue) {
 			list($p, $v) = explode('=', $paramAndValue, 2);
@@ -233,6 +208,95 @@ class ux_tx_realurl extends tx_realurl {
 		return parent::encodeSpURL_doEncode ( $inputQuery, $cHashCache, $origUrl );
 	}
 
+
+
+
+
+
+
+	/**
+	 * Overwriting original method to enable redirection to typolink parameters
+	 * 
+	*/
+	
+	/**
+	 * Look for redirect configuration.
+	 * If the input path is found as key in $this->extConf['redirects'] this method redirects to the URL found as value
+	 *
+	 * @param	string		Path from SpeakingURL.
+	 * @return	void
+	 * @see decodeSpURL_doDecode()
+	 */
+	public function decodeSpURL_checkRedirects($speakingURIpath) {
+		$speakingURIpath = trim($speakingURIpath);
+
+		if (isset($this->extConf['redirects'][$speakingURIpath])) {
+			$url = $this->extConf['redirects'][$speakingURIpath];
+			if (preg_match('/^30[1237];/', $url)) {
+				$redirectCode = intval(substr($url, 0, 3));
+				$url = substr($url, 4);
+				header('HTTP/1.0 ' . $redirectCode . ' Redirect');
+			}
+			header('Location: ' . t3lib_div::locationHeaderUrl($url));
+			exit();
+		}
+
+		// Regex redirects:
+		if (is_array($this->extConf['redirects_regex'])) {
+			foreach ($this->extConf['redirects_regex'] as $regex => $substString) {
+				if (preg_match('/' . $regex . '/', $speakingURIpath)) {
+					$url = @preg_replace('/' . $regex . '/', $substString, $speakingURIpath);
+					if ($url) {
+						if (preg_match('/^30[1237];/', $url)) {
+							$redirectCode = intval(substr($url, 0, 3));
+							header('HTTP/1.0 ' . $redirectCode . ' Redirect');
+							$url = substr($url, 4);
+						}
+						header('Location: ' . t3lib_div::locationHeaderUrl($url));
+						exit();
+					}
+				}
+			}
+		}
+
+		// DB defined redirects:
+		$hash = t3lib_div::md5int($speakingURIpath);
+		$url = $GLOBALS['TYPO3_DB']->fullQuoteStr($speakingURIpath, 'tx_realurl_redirects');
+		list($redirect_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
+			'destination,has_moved', 'tx_realurl_redirects',
+			'url_hash=' . $hash . ' AND url=' . $url);
+		if (is_array($redirect_row)) {
+			// Update statistics
+			$fields_values = array(
+				'counter' => 'counter+1',
+				'tstamp' => time(),
+				'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
+			);
+			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects',
+				'url_hash=' . $hash . ' AND url=' . $url,
+				$fields_values, array('counter'));
+				
+			/**
+			 * This is the part the actually differs from the original method
+			 */
+			// Convert to realurl url if the path begins with '/id='
+			if (t3lib_div::isFirstPartOfStr($redirect_row['destination'], '/id=')) {
+				$redirect_row['destination'] = $this->encodeSpURL_doEncode(substr($redirect_row['destination'], 1), $this->extConf['init']['enableCHashCache']);
+			}
+			/**
+			 * This is the part the actually differs from the original method [end]
+			 */
+
+			// Redirect
+			if ($redirect_row['has_moved']) {
+				header('HTTP/1.1 301 Moved Permanently');
+			}
+
+			header('Location: ' . t3lib_div::locationHeaderUrl($redirect_row['destination']));
+			exit();
+		}
+	}
+
 	/**
 	 * Decodes a speaking URL path into an array of GET parameters and a page id.
 	 *
@@ -241,7 +305,7 @@ class ux_tx_realurl extends tx_realurl {
 	 * @return	array		Array with id and GET parameters.
 	 * @see decodeSpURL()
 	 */
-	function decodeSpURL_doDecode($speakingURIpath, $cHashCache = FALSE) {
+	protected function decodeSpURL_doDecode($speakingURIpath, $cHashCache = FALSE) {
 
 		// Cached info:
 		$cachedInfo = array();
@@ -323,89 +387,66 @@ class ux_tx_realurl extends tx_realurl {
 		// Return information found:
 		return $cachedInfo;
 	}
-	
-	
-	
+
 	/**
-	 * Overwriting original method to enable redirection to typolink parameters
-	 * 
-	 * Look for redirect configuration.
-	 * If the input path is found as key in $this->extConf['redirects'] this method redirects to the URL found as value
+	 * Looks up an ID value (integer) in lookup-table based on input alias value.
+	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
+	 * In the lookup table 'tx_realurl_uniqalias' the field "value_alias" should be unique (per combination of field_alias+field_id+tablename)! However the "value_id" field doesn't have to; that is a feature which allows more aliases to point to the same id. The alias selected for converting id to alias will be the first inserted at the moment. This might be more intelligent in the future, having an order column which can be controlled from the backend for instance!
 	 *
-	 * @param	string		Path from SpeakingURL.
-	 * @return	void
-	 * @see decodeSpURL_doDecode()
+	 * @param	array		Configuration array
+	 * @param	string		Alias value to convert to ID
+	 * @param	boolean		<code>true</code> if only non-expiring record should be looked up
+	 * @return	integer		ID integer. If none is found: false
+	 * @see lookUpTranslation(), lookUp_idToUniqAlias()
 	 */
-	public function decodeSpURL_checkRedirects($speakingURIpath) {
-		$speakingURIpath = trim($speakingURIpath);
-
-		if (isset($this->extConf['redirects'][$speakingURIpath])) {
-			$url = $this->extConf['redirects'][$speakingURIpath];
-			if (preg_match('/^30[1237];/', $url)) {
-				$redirectCode = intval(substr($url, 0, 3));
-				$url = substr($url, 4);
-				header('HTTP/1.0 ' . $redirectCode . ' Redirect');
-			}
-			header('Location: ' . t3lib_div::locationHeaderUrl($url));
-			exit();
+	protected function lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired = FALSE) {
+		
+		static $cache = array();
+		$paramhash = md5(serialize($cfg).serialize($aliasValue).serialize($onlyNonExpired));
+		
+		if (isset($cache[$paramhash])) {
+			return $cache[$paramhash];
 		}
+		
+		$returnValue = parent::lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired);
 
-		// Regex redirects:
-		if (is_array($this->extConf['redirects_regex'])) {
-			foreach ($this->extConf['redirects_regex'] as $regex => $substString) {
-				if (preg_match('/' . $regex . '/', $speakingURIpath)) {
-					$url = @preg_replace('/' . $regex . '/', $substString, $speakingURIpath);
-					if ($url) {
-						if (preg_match('/^30[1237];/', $url)) {
-							$redirectCode = intval(substr($url, 0, 3));
-							header('HTTP/1.0 ' . $redirectCode . ' Redirect');
-							$url = substr($url, 4);
-						}
-						header('Location: ' . t3lib_div::locationHeaderUrl($url));
-						exit();
-					}
-				}
-			}
-		}
-
-		// DB defined redirects:
-		$hash = t3lib_div::md5int($speakingURIpath);
-		$url = $GLOBALS['TYPO3_DB']->fullQuoteStr($speakingURIpath, 'tx_realurl_redirects');
-		list($redirect_row) = $GLOBALS['TYPO3_DB']->exec_SELECTgetRows(
-			'destination,has_moved', 'tx_realurl_redirects',
-			'url_hash=' . $hash . ' AND url=' . $url);
-		if (is_array($redirect_row)) {
-			// Update statistics
-			$fields_values = array(
-				'counter' => 'counter+1',
-				'tstamp' => time(),
-				'last_referer' => t3lib_div::getIndpEnv('HTTP_REFERER')
-			);
-			$GLOBALS['TYPO3_DB']->exec_UPDATEquery('tx_realurl_redirects',
-				'url_hash=' . $hash . ' AND url=' . $url,
-				$fields_values, array('counter'));
-				
-			/**
-			 * This is the part the actually differs from the original method
-			 */
-			// Convert to realurl url if the path begins with '/id='
-			if (t3lib_div::isFirstPartOfStr($redirect_row['destination'], '/id=')) {
-				$redirect_row['destination'] = $this->encodeSpURL_doEncode(substr($redirect_row['destination'], 1), $this->extConf['init']['enableCHashCache']);
-			}
-			/**
-			 * This is the part the actually differs from the original method [end]
-			 */
-
-			// Redirect
-			if ($redirect_row['has_moved']) {
-				header('HTTP/1.1 301 Moved Permanently');
-			}
-
-			header('Location: ' . t3lib_div::locationHeaderUrl($redirect_row['destination']));
-			exit();
-		}
+		$cache[$paramhash] = $returnValue;
+		return $returnValue;
 	}
-	
+
+	/**
+	 * Looks up a alias string in lookup-table based on input ID value (integer)
+	 * (The lookup table for id<->alias is meant to contain UNIQUE alias strings for id integers)
+	 *
+	 * @param	array		Configuration array
+	 * @param	string		ID value to convert to alias value
+	 * @param	integer		sys_language_uid to use for lookup
+	 * @param	string		Optional alias value to limit search to
+	 * @return	string		Alias string. If none is found: false
+	 * @see lookUpTranslation(), lookUp_uniqAliasToId()
+	 */
+	protected function lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue = '') {
+		static $cache = array();
+		$paramhash = md5(serialize($cfg).serialize($idValue).serialize($lang).serialize($aliasValue));
+		
+		if (isset($cache[$paramhash])) {
+			return $cache[$paramhash];
+		}
+		$returnValue = parent::lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue);
+		$cache[$paramhash] = $returnValue;
+		return $returnValue;
+	}
+
+
+
+
+
+
+
+
+
+
+
 }
 
 
