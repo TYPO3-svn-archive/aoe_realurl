@@ -454,14 +454,16 @@ class tx_aoerealurlpath_pathgenerator {
 	 */
 	function _initSysPage($langID, $workspace) {
 		if (! is_object ( $this->sys_page )) {
-			// Create object if not found before:
-			// Initialize the page-select functions.
-			if (is_object($GLOBALS['TSFE']->sys_page)) {
-				// reuse the global object (to benefit from filled caches)
-				$this->sys_page = $GLOBALS['TSFE']->sys_page;
-			} else {
-				$this->sys_page = t3lib_div::makeInstance ( 't3lib_pageSelect' );
-			}
+			/**
+			 *	Initialize the page-select functions.
+			 * 	don't use $GLOBALS['TSFE']->sys_page here this might
+			 *	lead to strange side-effects due to the fact that some
+			 *	members of sys_page are modified.
+			 *
+			 *	I also opted against "clone $GLOBALS['TSFE']->sys_page"
+			 *	since this might still cause race conditions on the object
+			 **/
+			$this->sys_page = t3lib_div::makeInstance ( 't3lib_pageSelect' );
 		}
 		$this->sys_page->sys_language_uid = $langID;
 		if ($workspace != 0 && is_numeric ( $workspace )) {
