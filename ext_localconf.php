@@ -5,9 +5,11 @@ include_once (t3lib_extMgm::extPath ('aoe_realurlpath') . 'class.tx_aoerealurlpa
 $confArr = unserialize($GLOBALS['TYPO3_CONF_VARS']['EXT']['extConf']['aoe_realurlpath']);
 
 if ($confArr['applyPatch'] == 1) {
-	function aoe_get_version_from_conf($_EXTKEY) {
-		include(t3lib_extMgm::extPath($_EXTKEY, 'ext_emconf.php'));
-		return substr($EM_CONF[$_EXTKEY]['version'].'       ', 0, strlen($EM_CONF[$_EXTKEY]['version']));
+	if (!function_exists('aoe_get_version_from_conf'))
+		function aoe_get_version_from_conf($_EXTKEY) {
+			include(t3lib_extMgm::extPath($_EXTKEY, 'ext_emconf.php'));
+			return substr($EM_CONF[$_EXTKEY]['version'].'       ', 0, strlen($EM_CONF[$_EXTKEY]['version']));
+		}
 	}
 
 	if (version_compare(aoe_get_version_from_conf('realurl'), '1.5.3', '<=')) {
