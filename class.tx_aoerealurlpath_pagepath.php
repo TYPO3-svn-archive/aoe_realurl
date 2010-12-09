@@ -61,18 +61,18 @@ class tx_aoerealurlpath_pagepath {
 			//TODO is this needed ??
 		srand (); //init rand for cache
 
-
 		$this->initGenerator ();
-		$this->initCacheMgm ();
 
 		switch (( string ) $params ['mode']) {
 			case 'encode' :
+				$this->initCacheMgm($this->_getLanguageVarEncode());
 				$path = $this->_id2alias ( $params ['paramKeyValues'] );
 				$params ['pathParts'] = array_merge ( $params ['pathParts'], $path );
 				unset ( $params ['paramKeyValues'] ['id'] );
 				return;
 				break;
 			case 'decode' :
+				$this->initCacheMgm($this->_getLanguageVarDecode());
 				$id = $this->_alias2id ( $params ['pathParts'] );
 				return array (
 					$id,
@@ -96,7 +96,7 @@ class tx_aoerealurlpath_pagepath {
 			$pageId = $GLOBALS['TSFE']->sys_page->getPageIdFromAlias($pageId );
 		}
 		if ($this->_isCrawlerRun() && $GLOBALS['TSFE']->id == $pageId) {
-			$GLOBALS['TSFE']->applicationData['tx_crawler']['log'][] = 'aoe_realurlpath: _id2alias ' . $pageId . '/' . $this->_getLanguageVar() . '/' . $this->_getWorkspaceId();
+			$GLOBALS['TSFE']->applicationData['tx_crawler']['log'][] = 'aoe_realurlpath: _id2alias ' . $pageId . '/' . $this->_getLanguageVarEncode() . '/' . $this->_getWorkspaceId();
 			//clear this page cache:
 			$this->cachemgmt->markAsDirtyCompletePid($pageId );
 		}
@@ -104,7 +104,7 @@ class tx_aoerealurlpath_pagepath {
 		$buildedPath = $this->cachemgmt->isInCache($pageId);
 
 		if (!$buildedPath) {
-			$buildPageArray = $this->generator->build($pageId, $this->_getLanguageVar(), $this->_getWorkspaceId() );
+			$buildPageArray = $this->generator->build($pageId, $this->_getLanguageVarEncode(), $this->_getWorkspaceId() );
 			$buildedPath = $buildPageArray['path'];
 			$buildedPath = $this->cachemgmt->storeUniqueInCache($this->generator->getPidForCache(), $buildedPath, $buildPageArray['external'] );
 			if($this->_isCrawlerRun() && $GLOBALS['TSFE']->id == $pageId) {
@@ -192,6 +192,8 @@ class tx_aoerealurlpath_pagepath {
 	 * - orig_paramKeyValues is set by realurl during encoding, and it has the L paremeter value that is passed to typolink
 	 *
 	 * @return	integer		Current language or 0
+     * @deprecated
+     * @todo Should be replaced with the new methods - tests "tests/tx_aoerealurlpath_pagepath_testcase.php"
 	 */
 	function _getLanguageVar() {
 		$lang = FALSE;
@@ -207,7 +209,7 @@ class tx_aoerealurlpath_pagepath {
 		}
 		if ($lang === FALSE) {
 			//TODO next line is not covered by a test
-			$lang = intval ( t3lib_div::_GP ( $getVarName ) );
+			$lang = t3lib_div::_GP ( $getVarName );
 			if ($lang == 0 && method_exists ( $this->pObj, 'getRetrievedPreGetVar' )) {
 				$lang = intval ( $this->pObj->getRetrievedPreGetVar ( $getVarName ) );
 			}
@@ -217,6 +219,63 @@ class tx_aoerealurlpath_pagepath {
 			$lang = t3lib_div::callUserFunction ( $this->conf ['languageGetVarPostFunc'], $lang, $this );
 		}
 		return intval ( $lang );
+	}
+
+	/**
+	 * DECODE
+	 * Find the current language id.
+	 *
+	 * The languageid is used by cachemgmt in order to retrieve the correct pid for the given path
+	 * -that means it needs to return the languageid of the current context:
+	 * (means the L parameter value after realurl processing)
+	 *
+	 * @return integer Current language id
+	 *
+	 * @author Michael Klapper <michael.klapper@aoemedia.de>
+	 */
+	function _getLanguageVarDecode() {
+		$lang = FALSE;
+		$getVarName = $this->conf['languageGetVar'] ? $this->conf['languageGetVar'] : 'L';
+		$lang = $this->pObj->getRetrievedPreGetVar( $getVarName );
+
+		if ($this->conf['languageGetVarPostFunc']) {
+			$lang = t3lib_div::callUserFunction($this->conf['languageGetVarPostFunc'], $lang, $this );
+		}
+
+		return (int)$lang;
+	}
+
+	/**
+	 * ENCODE
+	 * Find the current language id.
+	 *
+	 * The langugeid is used to build the path + to cache the path
+	 * - if in the url parameters it is forced to generate the url in a specific language it needs to use this (L parameter defined in typolink)
+	 *
+	 * - orig_paramKeyValues is set by realurl during encoding, and it has the L paremeter value that is passed to typolink
+	 *
+	 * @return integer Current language id
+	 *
+	 * @author Michael Klapper <michael.klapper@aoemedia.de>
+	 */
+	function _getLanguageVarEncode() {
+		$lang = FALSE;
+		$getVarName = $this->conf ['languageGetVar'] ? $this->conf ['languageGetVar'] : 'L';
+		// $orig_paramKeyValues  Contains the index of GETvars that the URL had when the encoding began.
+		// Setting the language variable based on GETvar in URL which has been configured to carry the language uid:
+		if ($getVarName && array_key_exists($getVarName, $this->pObj->orig_paramKeyValues)) {
+			$lang = intval($this->pObj->orig_paramKeyValues[$getVarName]);
+			// Might be excepted (like you should for CJK cases which does not translate to ASCII equivalents)
+			if (t3lib_div::inList($this->conf['languageExceptionUids'], $lang)) {
+				$lang = 0;
+			}
+		}
+
+		if ($this->conf['languageGetVarPostFunc']) {
+			$lang = t3lib_div::callUserFunction($this->conf['languageGetVarPostFunc'], $lang, $this);
+		}
+
+		return (int)$lang;
 	}
 
 	/**
@@ -305,9 +364,11 @@ class tx_aoerealurlpath_pagepath {
 	/**
 	 * Initialize the Cache-Layer
 	 *
+	 * @param integer $lang Current language value
+	 * @return void
 	 */
-	function initCacheMgm() {
-		$this->cachemgmt = new tx_aoerealurlpath_cachemgmt ( $this->_getWorkspaceId (), $this->_getLanguageVar () );
+	function initCacheMgm($lang) {
+		$this->cachemgmt = new tx_aoerealurlpath_cachemgmt ( $this->_getWorkspaceId (), $lang );
 		$this->cachemgmt->setCacheTimeout ( $this->conf ['cacheTimeOut'] );
 		$this->cachemgmt->setRootPid ( $this->_getRootPid () );
 	}
