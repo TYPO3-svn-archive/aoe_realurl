@@ -133,6 +133,10 @@ class tx_aoerealurlpath_pagepath {
 			//read cache with the path you get, decrease path if nothing is found
 		$pageId = $this->cachemgmt->checkCacheWithDecreasingPath ( $pagePathOrigin, $keepPath );
 			//fallback 1 - use unstrict cache where
+			/**
+			 * @todo
+			 * @issue http://bugs.aoedev.com/view.php?id=19834
+			 */
 		if ($pageId == false) {
 			$this->cachemgmt->useUnstrictCacheWhere ();
 			$keepPath = array ();
