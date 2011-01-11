@@ -442,10 +442,12 @@ class ux_tx_realurl extends tx_realurl {
 		if (isset($cache[$paramhash])) {
 			return $cache[$paramhash];
 		}
-		
+
 		$returnValue = parent::lookUp_uniqAliasToId($cfg, $aliasValue, $onlyNonExpired);
 
-		$cache[$paramhash] = $returnValue;
+		if ($returnValue) {
+			$cache[$paramhash] = $returnValue;
+		}
 		return $returnValue;
 	}
 
@@ -468,6 +470,7 @@ class ux_tx_realurl extends tx_realurl {
 			return $cache[$paramhash];
 		}
 		$returnValue = parent::lookUp_idToUniqAlias($cfg, $idValue, $lang, $aliasValue);
+			//@todo check if we should cache anthing if $returnValue is "false"
 		$cache[$paramhash] = $returnValue;
 		return $returnValue;
 	}
