@@ -38,7 +38,10 @@ t3lib_extMgm::addTCAcolumns("pages", $tempColumns, 1 );
 t3lib_extMgm::addToAllTCAtypes("pages", "--div--;Url Settings,tx_aoerealurlpath_overridepath;;;;1-1-1, tx_aoerealurlpath_excludefrommiddle,tx_aoerealurlpath_overridesegment,tx_aoerealurlpath_info", '', 'after:tx_realurl_pathsegment');
 t3lib_extMgm::addToAllTCAtypes('pages', '--div--;RealUrl', '', 'before:tx_realurl_pathsegment');
 
-$GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment']['displayCond'] = 'EXT:aoe_realurlpath:LOADED:false';
+$GLOBALS['TCA']['pages']['columns']['tx_realurl_pathsegment'] = array(
+	 'displayCond' => 'EXT:aoe_realurlpath:LOADED:false',
+	 'config' => array('type'=>'input')
+);
 
 $confArr = unserialize ( $GLOBALS ['TYPO3_CONF_VARS'] ['EXT'] ['extConf'] ['aoe_realurlpath'] );
 if ($confArr ['enableLiveInfo'] == 1) {
