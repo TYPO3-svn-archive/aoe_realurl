@@ -241,9 +241,9 @@ class tx_aoerealurlpath_cachemgmt {
 	function _readCacheForPath($pagePath, $ignoreUid = null) {
 		
 		if (is_numeric($ignoreUid)) {
-			$where = 'path="' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache') . '" AND pageid != "' . intval($ignoreUid) . '" ';
+			$where = 'path=' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache') . ' AND pageid != "' . intval($ignoreUid) . '" ';
 		} else {
-			$where = 'path="' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache') . '" ';
+			$where = 'path=' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache');
 		}
 		$where .= $this->_getAddCacheWhere(TRUE);
 		if (method_exists($this->dbObj, 'exec_SELECTquery_master')) {
@@ -268,7 +268,7 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return string unique path in cache
 	 **/
 	function _readHistoryCacheForPath($pagePath) {
-		$where = "path=\"" . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cachehistory') . '"' . $this->_getAddCacheWhere(TRUE);
+		$where = "path=" . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cachehistory') . $this->_getAddCacheWhere(TRUE);
 		$res = $this->dbObj->exec_SELECTquery("*", "tx_aoerealurlpath_cachehistory", $where);
 		if ($res)
 			$result = $this->dbObj->sql_fetch_assoc($res);
