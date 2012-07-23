@@ -239,12 +239,11 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return string unique path in cache
 	 **/
 	function _readCacheForPath($pagePath, $ignoreUid = null) {
+		$where = 'path=' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache');
 		if (is_numeric($ignoreUid)) {
-			$where = 'path=' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache') . ' AND pageid != "' . intval($ignoreUid) . '" ';
-		} else {
-			$where = 'path=' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache');
+			$where .= ' AND pageid != "' . intval($ignoreUid) . '" ';
 		}
-
+		
 		$where .= $this->_getAddCacheWhere(TRUE);
 		if (method_exists($this->dbObj, 'exec_SELECTquery_master')) {
 			// Force select to use master server in t3p_scalable
