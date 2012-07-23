@@ -35,10 +35,15 @@ require_once (t3lib_extMgm::extPath ( "aoe_realurlpath" ) . 'class.tx_aoerealurl
 require_once (PATH_t3lib . 'class.t3lib_tcemain.php');
 
 class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase {
-
+	/**
+	 * @var string
+	 */
 	private $rootlineFields;
 
-	public function setUp() {
+	/**
+	 * set up the test
+	 */
+	protected function setUp() {
 		$GLOBALS['TYPO3_DB']->debugOutput = true;
 		$this->createDatabase();
 		$db = $this->useTestDatabase();
@@ -65,12 +70,20 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 			$GLOBALS['TSFE']->csConvObj=t3lib_div::makeInstance('t3lib_cs');
 		}
 	}
-
-	public function tearDown() {
+	/**
+	 * tear down the test
+	 */
+	protected function tearDown() {
 		$this->cleanDatabase();
 		$this->dropDatabase();
 		$GLOBALS['TYPO3_DB']->sql_select_db(TYPO3_db);
 		$GLOBALS['TYPO3_CONF_VARS']['FE']['addRootLineFields'] = $this->rootlineFields;
+	}
+	/**
+	 * @return integer
+	 */
+	public function callback_getTimestamp() {
+		return time();
 	}
 
 	/**
@@ -79,9 +92,7 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	 * @test
 	 */
 	public function storeInCache() {
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
+		$cache = $this->createCacheObject();
 		$path = $cache->storeUniqueInCache ( '9999', 'test9999' );
 		$this->assertEquals ( 'test9999', $cache->isInCache ( 9999 ), 'should be in cache' );
 		$cache->_delCacheForPid ( 9999 );
@@ -94,10 +105,8 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	 * @test
 	 */
 	public function storeEmptyInCache() {
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
+		$cache = $this->createCacheObject();
 		$cache->clearAllCache ();
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
 		$path = $cache->storeUniqueInCache ( '9995', '' );
 		$this->assertEquals ( '', $path, 'should be empty path' );
 		$this->assertEquals ( '', $cache->isInCache ( 9995 ), 'should be in cache' );
@@ -114,11 +123,10 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	 * @test
 	 */
 	public function getEmptyFromCache() {
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
+		$cache = $this->createCacheObject();
 		$cache->clearAllCache ();
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
 		$path = $cache->storeUniqueInCache ( '9995', '' );
+		$dummy = array ();
 		$pidOrFalse = $cache->checkCacheWithDecreasingPath ( array ('' ), $dummy );
 		$this->assertEquals ( $pidOrFalse, 9995, 'should be in cache' );
 	}
@@ -129,34 +137,26 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	 * @test
 	 */
 	public function storeInCacheCollision() {
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
+		$cache = $this->createCacheObject();
 		$path = $cache->storeUniqueInCache ( '9999', 'test9999' );
 		$this->assertEquals ( 'test9999', $cache->isInCache ( 9999 ), 'should be in cache' );
 		$path = $cache->storeUniqueInCache ( '9998', 'test9999' );
 		$this->assertEquals ( 'test9999_9998', $cache->isInCache ( 9998 ), 'should be in cache' );
 	}
-
 	/**
 	 * Cache avoids collisions
 	 *
 	 * @test
 	 */
 	public function storeInCacheCollisionInWorkspace() {
-
-			// new cachemgm for live workspace
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
+		// new cachemgm for live workspace
+		$cache = $this->createCacheObject();
 		$path = $cache->storeUniqueInCache ( '1000', 'test1000' );
 		$this->assertEquals ( 'test1000', $cache->isInCache ( 1000 ), 'should be in cache' );
 		unset($cache);
 
-			// new cachemgm with workspace setting
-		$cache = new tx_aoerealurlpath_cachemgmt ( 1, 0 );
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
+		// new cachemgm with workspace setting
+		$cache = $this->createCacheObject(1);
 			// assuming that 1001 is a different page
 		$path = $cache->storeUniqueInCache ( '1001', 'test1000' );
 		$this->assertEquals ( 'test1000_1001', $cache->isInCache ( 1001 ), 'should be in cache' );
@@ -180,21 +180,15 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	 * @test
 	 */
 	public function storeInCacheNoCollisionInLiveWorkspace() {
-
-			// new cachemgm for live workspace
-		$cache = new tx_aoerealurlpath_cachemgmt ( 1, 0 );
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
+		// new cachemgm for live workspace
+		$cache = $this->createCacheObject(1);	
 		$path = $cache->storeUniqueInCache ( '1001', 'test1000' );
 		$this->assertEquals ( 'test1000', $cache->isInCache ( 1001 ), 'should be in cache' );
 		unset($cache);
 
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
+		$cache = $this->createCacheObject();
 		$path = $cache->storeUniqueInCache ( '1000', 'test1000' );
 		$this->assertEquals ( 'test1000', $cache->isInCache ( 1000 ), 'should be in cache and should not collide with the workspace-record' );
-
 	}
 
 	/**
@@ -203,10 +197,8 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	 * @test
 	 */
 	public function storeInCacheWithoutCollision() {
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
+		$cache = $this->createCacheObject();
 		$cache->clearAllCache ();
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
 		$path = $cache->storeUniqueInCache ( '9990', 'sample' );
 		$this->assertEquals ( 'sample', $cache->isInCache ( 9990 ), 'sample should be in cache' );
 			//store same page in another workspace
@@ -229,10 +221,8 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	 * @test
 	 */
 	public function pathRetrieval() {
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
+		$cache = $this->createCacheObject();
 		$cache->clearAllCache ();
-		$cache->setCacheTimeOut ( 200 );
-		$cache->setRootPid ( 1 );
 		$cache->storeUniqueInCache ( '9990', 'sample/path1' );
 		$cache->storeUniqueInCache ( '9991', 'sample/path1/path2' );
 		$cache->storeUniqueInCache ( '9992', 'sample/newpath1/path3' );
@@ -253,22 +243,18 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 	 * @test
 	 */
 	public function canDetectRowAsInvalid() {
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
-		$cache->setCacheTimeOut ( 1 );
+		$cache = $this->createCacheObject(0,0,1);
 		$this->assertFalse ( $cache->_isCacheRowStillValid ( array ('dirty' => '1' ), FALSE ), 'should return false' );
-		$this->assertFalse ( $cache->_isCacheRowStillValid ( array ('tstamp' => (time () - 2) ), FALSE ), 'should return false' );
+		$this->assertFalse ( $cache->_isCacheRowStillValid ( array ('tstamp' => (time() - 2) ), FALSE ), 'should return false' );
 	}
-
 	/**
 	 * Check whether history-handling works as supposed
 	 *
 	 * @test
 	 */
 	public function canStoreAndGetFromHistory() {
-		$cache = new tx_aoerealurlpath_cachemgmt ( 0, 0 );
+		$cache = $this->createCacheObject(0,0,1);
 		$cache->clearAllCache ();
-		$cache->setCacheTimeOut ( 1 );
-		$cache->setRootPid ( 1 );
 		$cache->storeUniqueInCache ( '9990', 'sample/path1' );
 
 		$dummy = array ();
@@ -285,11 +271,26 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 		$dummy = array ();
 		$pidOrFalse = $cache->checkCacheWithDecreasingPath ( array ('sample', 'path1new' ), $dummy );
 		$this->assertEquals ( $pidOrFalse, '9990', ' 9990 should be the path' );
-		//now check history
 
+		//now check history
 		$pidOrFalse = $cache->checkHistoryCacheWithDecreasingPath ( array ('sample', 'path1' ), $dummy );
 		$this->assertEquals ( $pidOrFalse, '9990', ' 9990 should be the pid in history' );
+	}
 
+	/**
+	 * @param integer $workspace
+	 * @param integer $languageid
+	 * @param integer $timeout
+	 * @param integer $rootPid
+	 * @return tx_aoerealurlpath_cachemgmt
+	 */
+	private function createCacheObject($workspace = 0, $languageid = 0, $timeout = 200, $rootPid = 1) {
+		/* @var $cache tx_aoerealurlpath_cachemgmt */
+		$cache = $this->getMock ( 'tx_aoerealurlpath_cachemgmt', array ('getTimestamp'), array ($workspace,$languageid) );
+		$cache->expects ( $this->any () )->method ( 'getTimestamp' )->will ( $this->returnCallback ( array ($this, 'callback_getTimestamp' ) ) );
+		$cache->setCacheTimeOut ( $timeout );
+		$cache->setRootPid ( $rootPid );
+		return $cache;
 	}
 }
 ?>

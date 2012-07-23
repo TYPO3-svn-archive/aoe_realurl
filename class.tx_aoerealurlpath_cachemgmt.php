@@ -239,12 +239,12 @@ class tx_aoerealurlpath_cachemgmt {
 	 * @return string unique path in cache
 	 **/
 	function _readCacheForPath($pagePath, $ignoreUid = null) {
-		
 		if (is_numeric($ignoreUid)) {
 			$where = 'path=' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache') . ' AND pageid != "' . intval($ignoreUid) . '" ';
 		} else {
 			$where = 'path=' . $this->dbObj->fullQuoteStr($pagePath, 'tx_aoerealurlpath_cache');
 		}
+
 		$where .= $this->_getAddCacheWhere(TRUE);
 		if (method_exists($this->dbObj, 'exec_SELECTquery_master')) {
 			// Force select to use master server in t3p_scalable
@@ -370,13 +370,13 @@ class tx_aoerealurlpath_cachemgmt {
 	function _isCacheRowStillValid($row) {
 		if ($row['dirty'] == 1) {
 			return false;
-		} elseif (($this->cacheTimeOut > 0) && (($row['tstamp'] + $this->cacheTimeOut) < $GLOBALS['EXEC_TIME'])) {
-			return false;
-		} else {
-			return true;
 		}
+		if (($this->cacheTimeOut > 0) && (($row['tstamp'] + $this->cacheTimeOut) < $this->getTimestamp())) {
+			return false;
+		}
+		return true;
 	}
-
+	
 	/**
 	 *
 	 * @param int $pid
@@ -463,6 +463,11 @@ class tx_aoerealurlpath_cachemgmt {
 	protected function getCacheKey($pid) {
 		return implode('-', array($pid, $this->getRootPid(), $this->getWorkspaceId(), $this->getLanguageId()));
 	}
+	/**
+	 * @return integer
+	 */
+	protected function getTimestamp() {
+		return $GLOBALS['EXEC_TIME'];
+	}
 }
-
 ?>
