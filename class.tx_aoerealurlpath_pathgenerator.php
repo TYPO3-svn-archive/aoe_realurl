@@ -39,6 +39,10 @@ class tx_aoerealurlpath_pathgenerator {
 	var $conf; //conf from reaulurl configuration (segTitleFieldList...)
 	var $extconfArr; //ext_conf_template vars
 	var $doktypeCache = array ();
+	/**
+	 * @var t3lib_pageSelect
+	 */
+	var $sys_page;
 
 	/**
 	 *
