@@ -27,7 +27,7 @@
 
 /**
  *
- * @author  Daniel Pötzinger
+ * @author  Daniel Pï¿½tzinger
  * @author  Tolleiv Nietsch
  * @package realurl
  * @subpackage aoe_realurlpath
@@ -192,16 +192,17 @@ class tx_aoerealurlpath_pathgenerator {
 						$returnValue = false;
 						break;
 					default :
+						// shortcut is an reference to itselfs
 						if ($result ['shortcut'] == $id) {
 							$returnValue = false;
-						}
-
-						//look recursive:
-						$subpageShortCut = $this->_checkForShortCutPageAndGetTarget ( $result ['shortcut'], $langid, $workspace, $reclevel ++ );
-						if ($subpageShortCut !== false) {
-							$returnValue = $subpageShortCut;
 						} else {
-							$returnValue = $result ['shortcut'];
+							//look recursive:
+							$subpageShortCut = $this->_checkForShortCutPageAndGetTarget ( $result ['shortcut'], $langid, $workspace, $reclevel ++ );
+							if ($subpageShortCut !== false) {
+								$returnValue = $subpageShortCut;
+							} else {
+								$returnValue = $result ['shortcut'];
+							}
 						}
 						break;
 				}
