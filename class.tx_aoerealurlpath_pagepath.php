@@ -42,11 +42,20 @@ include_once (t3lib_extMgm::extPath ( 'aoe_realurlpath' ) . 'class.tx_aoerealurl
  * @todo	check last updatetime of pages
  */
 class tx_aoerealurlpath_pagepath {
-	var $generator; //help object for generating paths
+	/**
+	 * @var tx_aoerealurlpath_cachemgmt
+	 */
+	var $cachemgmt;
+	/**
+	 * help object for generating paths
+	 * 
+	 * @var tx_aoerealurlpath_pathgenerator
+	 */
+	var $generator;
 	var $insert = false;
 	var $pObj;
 	var $conf;
-
+	
 	/** Main function -> is called from real_url
 	 * parameters and results are in $params (some by reference)
 	 *
@@ -111,6 +120,7 @@ class tx_aoerealurlpath_pagepath {
 				$GLOBALS['TSFE']->applicationData['tx_crawler']['log'][] = 'created: ' . $buildedPath . ' pid:' . $pageId . '/' . $this->generator->getPidForCache();
 			}
 		}
+		
 		if ($buildedPath) {
 			$pagePath_exploded = explode('/', $buildedPath );
 			return $pagePath_exploded;
