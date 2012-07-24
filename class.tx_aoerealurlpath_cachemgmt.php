@@ -262,7 +262,7 @@ class tx_aoerealurlpath_cachemgmt {
 		$this->rootPid = $rootpid;
 	}
 	/**
-	 * Stores the path in cache and checks if that path is unique, if not this function makes the path unique by adding some numbers
+	 * Stores the path in cache and checks if that path is unique, if not this function makes the path unique by deleting needless cache-entries or adding some numbers
 	 * (throws error if caching fails)
 	 *
 	 * @param integer $pid
@@ -276,6 +276,17 @@ class tx_aoerealurlpath_cachemgmt {
 
 			//do cleanup of old cache entries:
 			$this->checkForCleanupCache($pid, $buildedPath);
+			if($this->getWorkspaceId() === 0) {
+				/**
+				 * we are in LIVE-workspace: check for other pages with same path, which are deleted or hidden (delete those needless cache-records)
+				 * This can happen, if an editor copied an page in LIVE-workspace and than make the source-page invisible (in this case, the buildedPath should point to the copied page) 
+				 */
+				$pageIds = $this->getPageIdsFromCacheForPath($buildedPath, $ignoreUid);
+				if(count($pageIds) > 0) {
+					$this->delCacheForInvisiblePages($pageIds);
+				}
+			}
+
 			if ($this->readCacheForPath($buildedPath, $ignoreUid) && !$disableCollisionDetection) {
 				$buildedPath .= '_' . $pid;
 			}
@@ -351,6 +362,21 @@ class tx_aoerealurlpath_cachemgmt {
 		}
 	}
 
+	/**
+	 * delete cache-entries for pages, which are invisible (because they are deleted or hidden)
+	 * 
+	 * @param array $pageIds
+	 * @return array
+	 */
+	private function delCacheForInvisiblePages(array $pageIds) {
+		$where = 'uid in (' . implode(',', $pageIds) . ') AND (deleted=1 OR hidden=1)';
+		$res = $this->getResultForSelectQuery('uid', 'pages', $where);
+		if ($res) {
+			while ($row = $this->dbObj->sql_fetch_assoc($res)) {
+				$this->delCacheForCompletePid( $row['uid'] );
+			}
+		}
+	}
 	/**
 	 * get where for cache table selects based on internal vars
 	 *

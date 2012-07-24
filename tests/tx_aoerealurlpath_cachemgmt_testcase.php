@@ -144,6 +144,26 @@ class tx_aoerealurlpath_cachemgmt_testcase extends tx_phpunit_database_testcase 
 		$this->assertEquals ( 'test9999_9998', $cache->isInCache ( 9998 ), 'should be in cache' );
 	}
 	/**
+	 * Cache deletes caches of invisible pages
+	 * 
+	 * Check, that cache of page X (which belongs to LIVE-workspace and is hidden/deleted) will be deleted, if path is equal with path of page Y (which belongs also to LIVE-workspace)
+	 *
+	 * @test
+	 */
+	public function storeInCacheDeleteCacheForInvisiblePages() {
+		$pagePath= 'dummy-page';
+		$pageXid = '1090'; // page-ID of page X
+		$pageYid = '1091'; // page-ID of page Y
+
+		$cache = $this->createCacheObject();
+		$cache->storeUniqueInCache ( $pageXid, $pagePath );
+		$this->assertEquals ( $pagePath, $cache->isInCache ( intval($pageXid) ), 'should be in cache' );
+
+		// page Y is called; so we check, if cache of page X will be deleted
+		$cache->storeUniqueInCache ( $pageYid, $pagePath );
+		$this->assertEquals ( $pagePath, $cache->isInCache ( intval($pageYid) ), 'should be in cache' );
+	}
+	/**
 	 * Cache avoids collisions
 	 *
 	 * @test
