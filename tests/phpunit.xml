@@ -1,0 +1,11 @@
+<phpunit colors="true" backupGlobals="false"
+	backupStaticAttributes="false" syntaxCheck="false" stopOnFailure="false"
+	convertErrorsToExceptions="true" convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true">
+	<!-- Add testclasses -->
+	<testsuites>
+		<testsuite name="aoe_realurlpath">
+			<directory suffix="testcase.php">./</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>
