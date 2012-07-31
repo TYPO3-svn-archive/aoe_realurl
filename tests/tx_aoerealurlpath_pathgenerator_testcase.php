@@ -299,7 +299,7 @@ class tx_aoerealurlpath_pathgenerator_testcase extends tx_phpunit_database_testc
 	 * Retrieval works for path being a delegation target
 	 *
 	 * @test
-	 * @expectedException Exception
+	 * @expectedException RuntimeException
 	 */
 	public function canNotBuildPathForPageInForeignRooline() {
 

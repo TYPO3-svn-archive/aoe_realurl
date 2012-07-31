@@ -266,7 +266,7 @@ class tx_aoerealurlpath_pathgenerator {
 		}
 		if (! $rootPidFound) {
 			if ($this->conf ['strictMode'] == 1) {
-				throw new Exception ( 'The rootpid ' . $this->rootPid . '.configured for pagepath generation was not found in the rootline for page' . $pid );
+				throw new RuntimeException ( 'The rootpid ' . $this->rootPid . '.configured for pagepath generation was not found in the rootline for page' . $pid );
 			}
 			return $rootLine;
 		}
